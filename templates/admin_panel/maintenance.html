@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Facility Maintenance Schedule | Super Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Facility Maintenance Schedules</h2>
+            <p class="text-muted small mb-0">Schedule service downtime windows and prevent concurrent reservation conflicts.</p>
+        </div>
+        <button class="btn btn-unibook-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newMaintenanceModal">
+            <i data-lucide="plus" style="width: 14px; height: 14px; display: inline-block;"></i> Schedule Maintenance
+        </button>
+    </div>
+
+    <!-- Management Navigation Pills -->
+    <div class="card card-custom p-2 mb-4 bg-light">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-outline-secondary btn-sm">Analytics Dashboard</a>
+            <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary btn-sm">Facility Manager</a>
+            <a href="{% url 'admin_panel:users' %}" class="btn btn-outline-secondary btn-sm">User Directory</a>
+            <a href="{% url 'admin_panel:bookings' %}" class="btn btn-outline-secondary btn-sm">All Bookings</a>
+            <a href="{% url 'admin_panel:maintenance' %}" class="btn btn-primary btn-sm fw-semibold">Maintenance</a>
+            <a href="{% url 'admin_panel:complaints' %}" class="btn btn-outline-secondary btn-sm">Complaints</a>
+            <a href="{% url 'admin_panel:announcements' %}" class="btn btn-outline-secondary btn-sm">Announcements</a>
+            <a href="{% url 'admin_panel:payments' %}" class="btn btn-outline-secondary btn-sm">Payments</a>
+        </div>
+    </div>
+
+    <div class="card card-custom p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Facility</th>
+                        <th>Issue / Work Title</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Scheduled By</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                        <tr>
+                            <td class="fw-bold">{{ r.facility.name }}</td>
+                            <td>
+                                <div>{{ r.title }}</div>
+                                <small class="text-muted">{{ r.description|truncatewords:8 }}</small>
+                            </td>
+                            <td>{{ r.start_time|date:"Y-m-d H:i" }}</td>
+                            <td>{{ r.end_time|date:"Y-m-d H:i" }}</td>
+                            <td>{{ r.created_by.username|default:"Admin" }}</td>
+                            <td>
+                                {% if r.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif r.status == 'in_progress' %}
+                                    <span class="badge bg-danger">In Progress</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Scheduled</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if r.status != 'completed' %}
+                                    <form method="POST" action="{% url 'admin_panel:maintenance' %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="complete">
+                                        <input type="hidden" name="record_id" value="{{ r.id }}">
+                                        <button type="submit" class="btn btn-outline-success btn-sm py-0 px-2">Mark Done</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">Closed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No maintenance periods scheduled.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Maintenance -->
+<div class="modal fade" id="newMaintenanceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" action="{% url 'admin_panel:maintenance' %}" class="modal-content">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Schedule Facility Maintenance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Target Facility</label>
+                    <select name="facility_id" class="form-select form-select-sm" required>
+                        {% for f in facilities %}
+                            <option value="{{ f.id }}">{{ f.name }} ({{ f.building }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Maintenance Title</label>
+                    <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Wooden Court Varnishing, AC Filter Service" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Description</label>
+                    <textarea name="description" class="form-control form-control-sm" rows="3" placeholder="Technical details of maintenance..." required></textarea>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold">Start DateTime</label>
+                        <input type="datetime-local" name="start_time" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold">End DateTime</label>
+                        <input type="datetime-local" name="end_time" class="form-control form-control-sm" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-unibook-primary btn-sm">Schedule Maintenance Window</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

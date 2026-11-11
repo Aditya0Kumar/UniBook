@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Announcements | Super Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Campus Notices & Announcements</h2>
+            <p class="text-muted small mb-0">Publish official announcements to student and faculty dashboards.</p>
+        </div>
+        <button class="btn btn-unibook-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newAnnouncementModal">
+            <i data-lucide="plus" style="width: 14px; height: 14px; display: inline-block;"></i> Post Announcement
+        </button>
+    </div>
+
+    <!-- Management Navigation Pills -->
+    <div class="card card-custom p-2 mb-4 bg-light">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-outline-secondary btn-sm">Analytics Dashboard</a>
+            <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary btn-sm">Facility Manager</a>
+            <a href="{% url 'admin_panel:users' %}" class="btn btn-outline-secondary btn-sm">User Directory</a>
+            <a href="{% url 'admin_panel:bookings' %}" class="btn btn-outline-secondary btn-sm">All Bookings</a>
+            <a href="{% url 'admin_panel:maintenance' %}" class="btn btn-outline-secondary btn-sm">Maintenance</a>
+            <a href="{% url 'admin_panel:complaints' %}" class="btn btn-outline-secondary btn-sm">Complaints</a>
+            <a href="{% url 'admin_panel:announcements' %}" class="btn btn-primary btn-sm fw-semibold">Announcements</a>
+            <a href="{% url 'admin_panel:payments' %}" class="btn btn-outline-secondary btn-sm">Payments</a>
+        </div>
+    </div>
+
+    <div class="card card-custom p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Audience</th>
+                        <th>Author</th>
+                        <th>Date Published</th>
+                        <th>Status</th>
+                        <th class="text-end">Toggle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in announcements %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ a.title }}</div>
+                                <small class="text-muted">{{ a.content|truncatewords:10 }}</small>
+                            </td>
+                            <td><span class="badge bg-secondary">{{ a.get_category_display }}</span></td>
+                            <td><span class="badge bg-info text-white">{{ a.get_target_role_display }}</span></td>
+                            <td>{{ a.author.username|default:"Admin" }}</td>
+                            <td>{{ a.created_at|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if a.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Archived</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <form method="POST" action="{% url 'admin_panel:announcements' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="announcement_id" value="{{ a.id }}">
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm py-0 px-2">
+                                        {% if a.is_active %}Archive{% else %}Publish{% endif %}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No announcements posted yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Announcement -->
+<div class="modal fade" id="newAnnouncementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" action="{% url 'admin_panel:announcements' %}" class="modal-content">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Post Campus Announcement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Title</label>
+                    <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. New Tennis Racquets Available for Checkout" required>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold">Category</label>
+                        <select name="category" class="form-select form-select-sm">
+                            <option value="general">General</option>
+                            <option value="sports">Sports</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="policy">Policy Update</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label small fw-semibold">Target Audience</label>
+                        <select name="target_role" class="form-select form-select-sm">
+                            <option value="all">All Community</option>
+                            <option value="student">Students Only</option>
+                            <option value="faculty">Faculty Only</option>
+                            <option value="staff">Staff Only</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Content</label>
+                    <textarea name="content" class="form-control form-control-sm" rows="4" placeholder="Announcement details..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-unibook-primary btn-sm">Publish Notice</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

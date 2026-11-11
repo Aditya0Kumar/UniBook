@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Transactions | Super Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Payment Transactions & Revenue</h2>
+            <p class="text-muted small mb-0">Audit university facility fees, smart ID wallet deductions, and payment gateways.</p>
+        </div>
+        <div class="text-end">
+            <span class="text-muted small d-block">Total Revenue Collected</span>
+            <span class="fs-4 fw-extrabold text-success">₹{{ total_revenue|floatformat:2 }}</span>
+        </div>
+    </div>
+
+    <!-- Management Navigation Pills -->
+    <div class="card card-custom p-2 mb-4 bg-light">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-outline-secondary btn-sm">Analytics Dashboard</a>
+            <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary btn-sm">Facility Manager</a>
+            <a href="{% url 'admin_panel:users' %}" class="btn btn-outline-secondary btn-sm">User Directory</a>
+            <a href="{% url 'admin_panel:bookings' %}" class="btn btn-outline-secondary btn-sm">All Bookings</a>
+            <a href="{% url 'admin_panel:maintenance' %}" class="btn btn-outline-secondary btn-sm">Maintenance</a>
+            <a href="{% url 'admin_panel:complaints' %}" class="btn btn-outline-secondary btn-sm">Complaints</a>
+            <a href="{% url 'admin_panel:announcements' %}" class="btn btn-outline-secondary btn-sm">Announcements</a>
+            <a href="{% url 'admin_panel:payments' %}" class="btn btn-primary btn-sm fw-semibold">Payments</a>
+        </div>
+    </div>
+
+    <div class="card card-custom p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Booking Ref</th>
+                        <th>User</th>
+                        <th>Facility</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                        <tr>
+                            <td class="font-monospace fw-bold text-primary">{{ p.transaction_id }}</td>
+                            <td>{{ p.booking.booking_reference }}</td>
+                            <td>{{ p.user.get_full_name|default:p.user.username }}</td>
+                            <td>{{ p.booking.facility.name }}</td>
+                            <td class="fw-bold">₹{{ p.amount }}</td>
+                            <td>{{ p.get_payment_method_display }}</td>
+                            <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if p.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif p.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif p.status == 'refunded' %}
+                                    <span class="badge bg-info text-white">Refunded</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ p.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">No transactions recorded yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

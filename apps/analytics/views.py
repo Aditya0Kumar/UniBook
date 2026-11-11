@@ -240,3 +240,127 @@ def admin_export_facilities_csv(request):
         ])
 
     return response
+
+
+@login_required
+def admin_maintenance_view(request):
+    if not (request.user.is_superadmin or request.user.is_staff):
+        return redirect('public:home')
+
+    facilities = Facility.objects.all()
+    records = FacilityMaintenance.objects.select_related('facility', 'created_by').all()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'create':
+            fac_id = request.POST.get('facility_id')
+            title = request.POST.get('title')
+            description = request.POST.get('description')
+            start_str = request.POST.get('start_time')
+            end_str = request.POST.get('end_time')
+
+            try:
+                start_dt = timezone.datetime.fromisoformat(start_str)
+                end_dt = timezone.datetime.fromisoformat(end_str)
+                facility = get_object_or_404(Facility, id=fac_id)
+                FacilityMaintenance.objects.create(
+                    facility=facility,
+                    title=title,
+                    description=description,
+                    start_time=timezone.make_aware(start_dt) if timezone.is_naive(start_dt) else start_dt,
+                    end_time=timezone.make_aware(end_dt) if timezone.is_naive(end_dt) else end_dt,
+                    status=FacilityMaintenance.STATUS_SCHEDULED,
+                    created_by=request.user
+                )
+                messages.success(request, f"Scheduled maintenance for '{facility.name}'.")
+            except Exception as e:
+                messages.error(request, f"Failed to schedule maintenance: {str(e)}")
+
+        elif action == 'complete':
+            record_id = request.POST.get('record_id')
+            m_record = get_object_or_404(FacilityMaintenance, id=record_id)
+            m_record.status = FacilityMaintenance.STATUS_COMPLETED
+            m_record.save()
+            messages.success(request, f"Marked maintenance '{m_record.title}' as completed.")
+
+        return redirect('admin_panel:maintenance')
+
+    return render(request, 'admin_panel/maintenance.html', {
+        'records': records,
+        'facilities': facilities,
+    })
+
+
+@login_required
+def admin_complaints_view(request):
+    if not (request.user.is_superadmin or request.user.is_staff):
+        return redirect('public:home')
+
+    complaints = Complaint.objects.select_related('facility', 'user', 'resolved_by').all()
+
+    if request.method == 'POST':
+        c_id = request.POST.get('complaint_id')
+        new_status = request.POST.get('status')
+        remarks = request.POST.get('admin_remarks', '')
+
+        complaint = get_object_or_404(Complaint, id=c_id)
+        complaint.status = new_status
+        complaint.admin_remarks = remarks
+        if new_status == Complaint.STATUS_RESOLVED:
+            complaint.resolved_by = request.user
+        complaint.save()
+
+        messages.success(request, f"Updated complaint #{complaint.id} to '{complaint.get_status_display()}'.")
+        return redirect('admin_panel:complaints')
+
+    return render(request, 'admin_panel/complaints.html', {'complaints': complaints})
+
+
+@login_required
+def admin_announcements_view(request):
+    if not (request.user.is_superadmin or request.user.is_staff):
+        return redirect('public:home')
+
+    announcements = Announcement.objects.select_related('author').all()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'create':
+            title = request.POST.get('title')
+            content = request.POST.get('content')
+            category = request.POST.get('category', Announcement.CATEGORY_GENERAL)
+            target = request.POST.get('target_role', Announcement.TARGET_ALL)
+
+            Announcement.objects.create(
+                title=title,
+                content=content,
+                category=category,
+                target_role=target,
+                author=request.user,
+                is_active=True
+            )
+            messages.success(request, "New announcement published to campus community.")
+        elif action == 'toggle':
+            ann_id = request.POST.get('announcement_id')
+            ann = get_object_or_404(Announcement, id=ann_id)
+            ann.is_active = not ann.is_active
+            ann.save()
+            messages.success(request, f"Updated announcement '{ann.title}' status.")
+
+        return redirect('admin_panel:announcements')
+
+    return render(request, 'admin_panel/announcements.html', {'announcements': announcements})
+
+
+@login_required
+def admin_payments_view(request):
+    if not (request.user.is_superadmin or request.user.is_staff):
+        return redirect('public:home')
+
+    payments = Payment.objects.select_related('booking', 'user', 'booking__facility').all()
+    total_rev = payments.filter(status=Payment.STATUS_COMPLETED).aggregate(total=Sum('amount'))['total'] or 0
+
+    return render(request, 'admin_panel/payments.html', {
+        'payments': payments,
+        'total_revenue': total_rev,
+    })
