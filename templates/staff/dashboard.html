@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Facility Manager Portal | UniBook{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="card card-custom p-4 mb-4" style="background: linear-gradient(135deg, #0f766e 0%, #115e59 100%); color: #ffffff;">
+        <div class="row align-items-center g-3">
+            <div class="col-md-8">
+                <span class="badge bg-white text-dark mb-2">Facility Manager & Operations</span>
+                <h2 class="fw-bold mb-1">Operations Control: {{ user.get_full_name|default:user.username }}</h2>
+                <p class="text-white-50 mb-0 small">
+                    Managing <strong>{{ managed_facilities.count }}</strong> university facility locations &bull; Real-time access & validation active
+                </p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <a href="{% url 'staff:qr_scanner' %}" class="btn btn-warning fw-semibold text-dark shadow-sm">
+                    <i data-lucide="scan-line" style="width: 16px; height: 16px; display: inline-block;"></i> Open QR Camera Scanner
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Check-in Validator Bar -->
+    <div class="card card-custom p-3 mb-4 bg-light border">
+        <form method="POST" action="{% url 'staff:dashboard' %}" class="row g-2 align-items-center">
+            {% csrf_token %}
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i data-lucide="qr-code" style="width: 18px; height: 18px;"></i></span>
+                    <input type="text" name="token_or_reference" class="form-control" placeholder="Scan QR Pass or Enter Booking Reference (e.g. UB-20261111-XXXXX or UUID token)" required autofocus>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-unibook-primary w-100 fw-semibold">
+                    <i data-lucide="check-circle" style="width: 16px; height: 16px; display: inline-block;"></i> Validate & Check In
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-warning border-4">
+                <span class="text-muted small">Pending Approvals</span>
+                <h3 class="fw-bold my-1 text-warning">{{ pending_bookings.count }}</h3>
+                <small class="text-secondary"><a href="{% url 'staff:approvals' %}" class="text-decoration-none">Review Requests &rarr;</a></small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-primary border-4">
+                <span class="text-muted small">Today's Reservations</span>
+                <h3 class="fw-bold my-1 text-primary">{{ today_bookings.count }}</h3>
+                <small class="text-secondary">{{ today|date:"F d, Y" }}</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-success border-4">
+                <span class="text-muted small">Managed Facilities</span>
+                <h3 class="fw-bold my-1 text-success">{{ managed_facilities.count }}</h3>
+                <small class="text-secondary">Assigned active locations</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-danger border-4">
+                <span class="text-muted small">Maintenance Blocks</span>
+                <h3 class="fw-bold my-1 text-danger">{{ active_maintenances.count }}</h3>
+                <small class="text-secondary">Active service periods</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content: Pending Approvals & Today's Schedule -->
+    <div class="row g-4">
+        <!-- Pending Approvals -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Pending Approval Requests ({{ pending_bookings.count }})</h5>
+                    <a href="{% url 'staff:approvals' %}" class="small text-decoration-none fw-semibold">Manage All &rarr;</a>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    {% for b in pending_bookings|slice:":5" %}
+                        <div class="list-group-item px-0 py-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="fw-bold text-dark">{{ b.facility.name }}</div>
+                                    <small class="text-muted">By {{ b.user.get_full_name|default:b.user.username }} ({{ b.user.role|title }})</small>
+                                </div>
+                                <span class="badge badge-status-pending">Pending</span>
+                            </div>
+                            <div class="small text-secondary mb-2">
+                                <strong>Date:</strong> {{ b.booking_date }} ({{ b.start_time|time:"H:i" }} - {{ b.end_time|time:"H:i" }})<br>
+                                <strong>Purpose:</strong> {{ b.purpose|default:"Academic session" }}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <form method="POST" action="{% url 'staff:approvals' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="booking_id" value="{{ b.id }}">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" class="btn btn-success btn-sm py-1 px-3">Approve</button>
+                                </form>
+                                <form method="POST" action="{% url 'staff:approvals' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="booking_id" value="{{ b.id }}">
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm py-1 px-3">Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4 text-muted small">
+                            No pending approvals at this time. All requests are processed!
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Reservations -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3">Today's Check-in Schedule</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle small mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Facility</th>
+                                <th>User</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in today_bookings %}
+                                <tr>
+                                    <td class="fw-semibold">{{ b.start_time|time:"H:i" }} - {{ b.end_time|time:"H:i" }}</td>
+                                    <td>{{ b.facility.name }}</td>
+                                    <td>{{ b.user.get_full_name|default:b.user.username }}</td>
+                                    <td>
+                                        {% if b.status == 'checked_in' %}
+                                            <span class="badge badge-status-checked-in">Checked In</span>
+                                        {% else %}
+                                            <span class="badge badge-status-confirmed">Expected</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">
+                                        No reservations scheduled for today.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In | UniBook{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card card-custom p-4 shadow-sm">
+                <div class="text-center mb-4">
+                    <div class="mx-auto mb-2 p-3 rounded-circle d-flex align-items-center justify-content-center bg-light" style="width: 56px; height: 56px;">
+                        <i data-lucide="lock" class="text-primary" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="fw-bold">Sign In to UniBook</h3>
+                    <p class="text-muted small">Enter your university credentials to manage your facility reservations.</p>
+                </div>
+
+                <form method="POST" action="{% url 'accounts:login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Username or Campus Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i data-lucide="user" style="width: 16px; height: 16px;"></i></span>
+                            <input type="text" name="username" id="loginUsername" class="form-control" placeholder="e.g. student1 or alex.student@campus.edu" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-secondary mb-0">Password</label>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i data-lucide="key" style="width: 16px; height: 16px;"></i></span>
+                            <input type="password" name="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-unibook-primary py-2 fw-semibold">Sign In</button>
+                    </div>
+                </form>
+
+                <!-- Quick Demo Login Buttons for Evaluator / Testing -->
+                <div class="p-3 bg-light rounded-3 border mt-2">
+                    <div class="small fw-bold text-secondary mb-2 text-center">One-Click Demo Credentials:</div>
+                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="setDemo('student_demo', 'StudentPass123!')">Student</button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setDemo('faculty_demo', 'FacultyPass123!')">Faculty</button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setDemo('manager_demo', 'ManagerPass123!')">Facility Manager</button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="setDemo('admin', 'AdminPass123!')">Super Admin</button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 text-muted small">
+                    Don't have an account yet?
+                    <a href="{% url 'accounts:register' %}" class="text-primary fw-semibold text-decoration-none">Register here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setDemo(username, password) {
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPassword').value = password;
+    }
+</script>
+{% endblock %}

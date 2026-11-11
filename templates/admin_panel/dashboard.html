@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Super Admin Operations & Analytics | UniBook{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-danger text-white">Super Admin Control</span>
+                <h2 class="fw-bold mb-0">Platform Overview & Analytics</h2>
+            </div>
+            <p class="text-muted small mb-0">Real-time system health, booking velocity, facility usage, and audit reports.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'admin_panel:export_bookings_csv' %}" class="btn btn-outline-success btn-sm fw-semibold">
+                <i data-lucide="download" style="width: 14px; height: 14px; display: inline-block;"></i> Export Bookings CSV
+            </a>
+            <a href="{% url 'admin_panel:export_facilities_csv' %}" class="btn btn-outline-primary btn-sm fw-semibold">
+                <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; display: inline-block;"></i> Export Facilities CSV
+            </a>
+            <a href="/admin/" target="_blank" class="btn btn-dark btn-sm fw-semibold">
+                <i data-lucide="shield" style="width: 14px; height: 14px; display: inline-block;"></i> Django Admin
+            </a>
+        </div>
+    </div>
+
+    <!-- Management Navigation Pills -->
+    <div class="card card-custom p-2 mb-4 bg-light">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-primary btn-sm fw-semibold">Analytics Dashboard</a>
+            <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary btn-sm">Facility Manager</a>
+            <a href="{% url 'admin_panel:users' %}" class="btn btn-outline-secondary btn-sm">User Directory</a>
+            <a href="{% url 'admin_panel:bookings' %}" class="btn btn-outline-secondary btn-sm">All Bookings</a>
+            <a href="/api/docs/" target="_blank" class="btn btn-outline-warning btn-sm ms-auto">OpenAPI 3 Docs</a>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-primary border-4">
+                <span class="text-muted small">Total Users</span>
+                <h3 class="fw-bold my-1 text-primary">{{ total_users }}</h3>
+                <small class="text-secondary">Students, Faculty & Staff</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-teal border-4" style="border-color: var(--brand-teal) !important;">
+                <span class="text-muted small">Active Facilities</span>
+                <h3 class="fw-bold my-1 text-teal" style="color: var(--brand-teal);">{{ total_facilities }}</h3>
+                <small class="text-secondary">Across all campuses</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-success border-4">
+                <span class="text-muted small">Total Bookings</span>
+                <h3 class="fw-bold my-1 text-success">{{ total_bookings }}</h3>
+                <small class="text-secondary">{{ active_bookings }} currently active</small>
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card card-custom p-3 border-start border-warning border-4">
+                <span class="text-muted small">Platform Revenue</span>
+                <h3 class="fw-bold my-1 text-warning">₹{{ total_revenue|floatformat:2 }}</h3>
+                <small class="text-secondary">Paid slots & equipment</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js Analytics Grid -->
+    <div class="row g-4 mb-4">
+        <!-- 7-Day Booking Trends -->
+        <div class="col-lg-8">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i data-lucide="trending-up" class="text-primary" style="width: 20px; height: 20px;"></i>
+                    Daily Reservation Trends (Last 7 Days)
+                </h5>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Facility Category Distribution -->
+        <div class="col-lg-4">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i data-lucide="pie-chart" class="text-teal" style="width: 20px; height: 20px;"></i>
+                    Category Breakdown
+                </h5>
+                <div style="position: relative; height: 260px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Peak Booking Hours -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i data-lucide="bar-chart-2" class="text-primary" style="width: 20px; height: 20px;"></i>
+                    Peak Booking Hours (Operating Distribution)
+                </h5>
+                <div style="position: relative; height: 230px;">
+                    <canvas id="peakChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Audit Logs -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i data-lucide="file-text" class="text-dark" style="width: 20px; height: 20px;"></i>
+                    Live System Audit Logs
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle small mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                                <tr>
+                                    <td class="text-muted">{{ log.timestamp|date:"M d H:i" }}</td>
+                                    <td class="fw-semibold">{{ log.user.username|default:"System" }}</td>
+                                    <td>{{ log.action }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-muted text-center py-3">No audit logs recorded yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('/admin-panel/api/analytics-data/')
+            .then(res => res.json())
+            .then(data => {
+                // 1. Line Chart: Booking Trends
+                const ctxTrend = document.getElementById('trendChart').getContext('2d');
+                new Chart(ctxTrend, {
+                    type: 'line',
+                    data: {
+                        labels: data.booking_trends.labels,
+                        datasets: [{
+                            label: 'Reservations',
+                            data: data.booking_trends.data,
+                            borderColor: '#2563EB',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#2563EB'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+
+                // 2. Doughnut Chart: Categories
+                const ctxCat = document.getElementById('categoryChart').getContext('2d');
+                new Chart(ctxCat, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.category_distribution.labels,
+                        datasets: [{
+                            data: data.category_distribution.data,
+                            backgroundColor: ['#2563EB', '#14B8A6', '#F59E0B', '#10B981', '#6366F1', '#EC4899']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        }
+                    }
+                });
+
+                // 3. Bar Chart: Peak Hours
+                const ctxPeak = document.getElementById('peakChart').getContext('2d');
+                new Chart(ctxPeak, {
+                    type: 'bar',
+                    data: {
+                        labels: data.peak_hours.labels,
+                        datasets: [{
+                            label: 'Bookings',
+                            data: data.peak_hours.data,
+                            backgroundColor: '#14B8A6',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
+                        }
+                    }
+                });
+            })
+            .catch(err => console.error('Error fetching analytics:', err));
+    });
+</script>
+{% endblock %}

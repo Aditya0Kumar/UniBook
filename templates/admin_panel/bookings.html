@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}All Bookings | Super Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Global Bookings Log</h2>
+            <p class="text-muted small mb-0">Complete university reservation history, status tracking, and audit data.</p>
+        </div>
+        <a href="{% url 'admin_panel:export_bookings_csv' %}" class="btn btn-outline-success btn-sm">
+            <i data-lucide="download" style="width: 14px; height: 14px; display: inline-block;"></i> Export All CSV
+        </a>
+    </div>
+
+    <div class="card card-custom p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ref</th>
+                        <th>Facility</th>
+                        <th>User</th>
+                        <th>Date & Time</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Pass</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ b.booking_reference }}</td>
+                            <td>{{ b.facility.name }}</td>
+                            <td>
+                                <div>{{ b.user.get_full_name|default:b.user.username }}</div>
+                                <small class="text-muted">{{ b.user.role|title }}</small>
+                            </td>
+                            <td>
+                                <div>{{ b.booking_date|date:"Y-m-d" }}</div>
+                                <small class="text-muted">{{ b.start_time|time:"H:i" }} - {{ b.end_time|time:"H:i" }}</small>
+                            </td>
+                            <td>
+                                {% if b.status == 'confirmed' %}
+                                    <span class="badge badge-status-confirmed">Confirmed</span>
+                                {% elif b.status == 'pending' %}
+                                    <span class="badge badge-status-pending">Pending</span>
+                                {% elif b.status == 'checked_in' %}
+                                    <span class="badge badge-status-checked-in">Checked In</span>
+                                {% elif b.status == 'cancelled' %}
+                                    <span class="badge badge-status-cancelled">Cancelled</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ b.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if b.payment_status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif b.payment_status == 'free' %}
+                                    <span class="badge bg-light text-muted border">Free</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">{{ b.get_payment_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'bookings:booking_detail' b.id %}" class="btn btn-outline-primary btn-sm py-0 px-2" target="_blank">
+                                    Pass
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">No reservations recorded yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

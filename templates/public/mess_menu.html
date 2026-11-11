@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Mess Menu & Dining | UniBook{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Campus Dining & Mess Schedule</h2>
+            <p class="text-muted small mb-0">Browse weekly food menus, timings, dietary accommodations, and reserve meal passes.</p>
+        </div>
+        {% if selected_facility %}
+            <a href="{% url 'public:facility_detail' selected_facility.slug %}" class="btn btn-unibook-primary btn-sm">
+                <i data-lucide="ticket" style="width: 14px; height: 14px; display: inline-block;"></i> Reserve Meal Slot
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Facility Switcher & Dietary Preference Card -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-7">
+            <div class="card card-custom p-3 bg-light h-100">
+                <span class="small fw-semibold text-secondary mb-2 d-block">Select Dining Hall:</span>
+                <div class="d-flex flex-wrap gap-2">
+                    {% for mfac in mess_facilities %}
+                        <a href="{% url 'mess:menu' %}?facility={{ mfac.id }}" class="btn btn-sm {% if selected_facility.id == mfac.id %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            {{ mfac.name }} ({{ mfac.building }})
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div class="card card-custom p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-dark">My Dietary Preference</span>
+                    {% if user.is_authenticated %}
+                        <button class="btn btn-link btn-sm p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#dietCollapse">
+                            Edit
+                        </button>
+                    {% endif %}
+                </div>
+                {% if user.is_authenticated %}
+                    <div class="small">
+                        <strong>Current:</strong>
+                        <span class="badge bg-success ms-1">{{ user_diet.get_preference_display|default:"Vegetarian (Default)" }}</span>
+                    </div>
+                    <!-- Quick update collapse -->
+                    <div class="collapse mt-2" id="dietCollapse">
+                        <form method="POST" action="{% url 'mess:menu' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="update_diet" value="1">
+                            <div class="input-group input-group-sm mb-1">
+                                <select name="preference" class="form-select">
+                                    <option value="veg">Vegetarian</option>
+                                    <option value="non_veg">Non-Vegetarian</option>
+                                    <option value="vegan">Vegan</option>
+                                    <option value="jain">Jain Counter</option>
+                                    <option value="halal">Halal</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0"><a href="{% url 'accounts:login' %}">Log in</a> to set vegan, jain or halal dining preferences.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Meal Hours Legend -->
+    <div class="card card-custom p-3 mb-4">
+        <div class="row g-2 text-center small">
+            <div class="col-6 col-md-3">
+                <div class="p-2 border rounded bg-light">
+                    <strong class="d-block text-primary">Breakfast</strong>
+                    <span class="text-muted">07:30 - 09:30</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2 border rounded bg-light">
+                    <strong class="d-block text-success">Lunch</strong>
+                    <span class="text-muted">12:00 - 14:30</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2 border rounded bg-light">
+                    <strong class="d-block text-warning">Evening Snacks</strong>
+                    <span class="text-muted">17:00 - 18:30</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2 border rounded bg-light">
+                    <strong class="d-block text-dark">Dinner</strong>
+                    <span class="text-muted">19:30 - 21:45</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Schedule Accordion / Tabs -->
+    <div class="card card-custom p-4">
+        <h4 class="fw-bold mb-3">Weekly Menu Schedule</h4>
+        <div class="row g-3">
+            {% for day_name, day_menus in weekly_schedule.items %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card card-custom h-100 p-3 bg-light border">
+                        <h5 class="fw-bold text-primary mb-3 border-bottom pb-2">{{ day_name }}</h5>
+                        {% for item in day_menus %}
+                            <div class="mb-3">
+                                <span class="badge bg-secondary mb-1" style="font-size: 0.7rem;">{{ item.meal.name }}</span>
+                                <div class="small fw-semibold text-dark">{{ item.dishes }}</div>
+                                {% if item.special_dietary_options %}
+                                    <small class="text-muted d-block" style="font-size: 0.72rem;">Special: {{ item.special_dietary_options }}</small>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted small">Standard rotating campus nutritious meal plan.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

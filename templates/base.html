@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}UniBook | University Facility Booking & Management{% endblock %}</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- FullCalendar CSS & JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.11"></script>
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --brand-navy: #172554;
+            --brand-navy-light: #1e3a8a;
+            --brand-blue: #2563EB;
+            --brand-blue-hover: #1d4ed8;
+            --brand-teal: #14B8A6;
+            --brand-bg: #F8FAFC;
+            --brand-text: #0F172A;
+            --brand-muted: #64748B;
+            --brand-card-bg: #FFFFFF;
+            --brand-border: #E2E8F0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--brand-bg);
+            color: var(--brand-text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .navbar-brand-unibook {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: #FFFFFF !important;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bg-unibook-navy {
+            background-color: var(--brand-navy) !important;
+        }
+
+        .btn-unibook-primary {
+            background-color: var(--brand-blue);
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .btn-unibook-primary:hover {
+            background-color: var(--brand-blue-hover);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-unibook-teal {
+            background-color: var(--brand-teal);
+            color: #ffffff;
+            border: none;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
+        }
+
+        .btn-unibook-teal:hover {
+            background-color: #0d9488;
+            color: #ffffff;
+        }
+
+        .card-custom {
+            background: #ffffff;
+            border: 1px solid var(--brand-border);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            border-color: #CBD5E1;
+        }
+
+        .badge-status-confirmed {
+            background-color: #DCFCE7;
+            color: #15803D;
+            font-weight: 600;
+        }
+
+        .badge-status-pending {
+            background-color: #FEF3C7;
+            color: #B45309;
+            font-weight: 600;
+        }
+
+        .badge-status-cancelled {
+            background-color: #FEE2E2;
+            color: #B91C1C;
+            font-weight: 600;
+        }
+
+        .badge-status-checked-in {
+            background-color: #E0E7FF;
+            color: #3730A3;
+            font-weight: 600;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            color: #334155;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: #EFF6FF;
+            color: var(--brand-blue);
+            font-weight: 600;
+        }
+
+        .footer {
+            margin-top: auto;
+            background-color: #0F172A;
+            color: #94A3B8;
+            padding: 40px 0 20px 0;
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Main Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-unibook-navy py-2 sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-unibook" href="{% url 'public:home' %}">
+                <i data-lucide="building-2" class="text-teal" style="stroke: var(--brand-teal);"></i>
+                UniBook
+                <span class="badge bg-primary text-white rounded-pill px-2" style="font-size: 0.65rem;">CampusEase</span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 hover-white" href="{% url 'public:directory' %}">
+                            <i data-lucide="layout-grid" style="width: 16px; height: 16px; display: inline-block;"></i> Facilities
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 hover-white" href="{% url 'gym:overview' %}">
+                            <i data-lucide="dumbbell" style="width: 16px; height: 16px; display: inline-block;"></i> Gym
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 hover-white" href="{% url 'mess:menu' %}">
+                            <i data-lucide="utensils" style="width: 16px; height: 16px; display: inline-block;"></i> Mess Menu
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 hover-white" href="{% url 'public:about' %}">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50 hover-white" href="{% url 'public:contact' %}">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-warning" href="/api/docs/" target="_blank">
+                            <i data-lucide="file-code" style="width: 16px; height: 16px; display: inline-block;"></i> API Docs
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2">
+                    {% if user.is_authenticated %}
+                        <!-- Notifications Dropdown -->
+                        <div class="dropdown me-2">
+                            <button class="btn btn-outline-light btn-sm position-relative rounded-circle p-2" type="button" data-bs-toggle="dropdown">
+                                <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                                        {{ unread_notifications_count }}
+                                    </span>
+                                {% endif %}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" style="min-width: 280px; max-width: 320px;">
+                                <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    <a href="{% url 'notifications:list' %}" class="text-decoration-none" style="font-size: 0.8rem;">View All</a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                {% for n in header_notifications %}
+                                    <li>
+                                        <a class="dropdown-item py-2" href="{% url 'notifications:mark_read' n.id %}">
+                                            <div class="fw-semibold text-truncate" style="font-size: 0.85rem;">{{ n.title }}</div>
+                                            <div class="text-muted text-truncate" style="font-size: 0.75rem;">{{ n.message }}</div>
+                                            <small class="text-secondary" style="font-size: 0.7rem;">{{ n.created_at|timesince }} ago</small>
+                                        </a>
+                                    </li>
+                                {% empty %}
+                                    <li class="dropdown-item text-center text-muted py-3" style="font-size: 0.85rem;">
+                                        No unread notifications
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <!-- User Role Badge & Dashboard Link -->
+                        {% if user.is_superadmin %}
+                            <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-warning btn-sm fw-semibold">
+                                <i data-lucide="shield-check" style="width: 16px; height: 16px; display: inline-block;"></i> Admin Panel
+                            </a>
+                        {% elif user.is_facility_manager %}
+                            <a href="{% url 'staff:dashboard' %}" class="btn btn-teal btn-sm fw-semibold text-white" style="background-color: var(--brand-teal);">
+                                <i data-lucide="clipboard-check" style="width: 16px; height: 16px; display: inline-block;"></i> Staff Portal
+                            </a>
+                        {% elif user.is_faculty %}
+                            <a href="{% url 'faculty:dashboard' %}" class="btn btn-info btn-sm fw-semibold text-white">
+                                <i data-lucide="graduation-cap" style="width: 16px; height: 16px; display: inline-block;"></i> Faculty Portal
+                            </a>
+                        {% else %}
+                            <a href="{% url 'student:dashboard' %}" class="btn btn-primary btn-sm fw-semibold">
+                                <i data-lucide="user" style="width: 16px; height: 16px; display: inline-block;"></i> Dashboard
+                            </a>
+                        {% endif %}
+
+                        <!-- User Profile Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light btn-sm dropdown-toggle rounded-pill px-3" type="button" data-bs-toggle="dropdown">
+                                {{ user.first_name|default:user.username }}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li>
+                                    <div class="dropdown-item-text">
+                                        <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                        <small class="text-muted">{{ user.get_role_display }}</small>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'bookings:my_bookings' %}"><i data-lucide="calendar" style="width: 15px; height: 15px; display: inline-block;" class="me-1"></i> My Bookings</a></li>
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i data-lucide="settings" style="width: 15px; height: 15px; display: inline-block;" class="me-1"></i> Profile Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i data-lucide="log-out" style="width: 15px; height: 15px; display: inline-block;" class="me-1"></i> Log Out</a></li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-sm px-3">Log In</a>
+                        <a href="{% url 'accounts:register' %}" class="btn btn-unibook-primary btn-sm px-3">Register</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Main Page Content Block -->
+    <main class="flex-grow-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="d-flex align-items-center gap-2 mb-2 text-white fw-bold fs-5">
+                        <i data-lucide="building-2" style="stroke: var(--brand-teal);"></i>
+                        UniBook (CampusEase)
+                    </div>
+                    <p style="font-size: 0.9rem;" class="text-white-50">
+                        The comprehensive facility reservation and resource management system for students, faculty, and university administrators.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-secondary">Django 6.1</span>
+                        <span class="badge bg-secondary">MySQL 8</span>
+                        <span class="badge bg-secondary">REST API</span>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-4">
+                    <h6 class="text-white fw-semibold mb-3">Facilities</h6>
+                    <ul class="list-unstyled" style="font-size: 0.85rem;">
+                        <li class="mb-2"><a href="{% url 'public:directory' %}?category=gym" class="text-white-50 text-decoration-none">Gym & Fitness</a></li>
+                        <li class="mb-2"><a href="{% url 'public:directory' %}?category=mess-and-dining" class="text-white-50 text-decoration-none">Mess & Dining</a></li>
+                        <li class="mb-2"><a href="{% url 'public:directory' %}?category=sports" class="text-white-50 text-decoration-none">Sports Courts</a></li>
+                        <li class="mb-2"><a href="{% url 'public:directory' %}?category=computer-laboratory" class="text-white-50 text-decoration-none">Laboratories</a></li>
+                        <li class="mb-2"><a href="{% url 'public:directory' %}?category=auditorium" class="text-white-50 text-decoration-none">Auditoriums</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-4">
+                    <h6 class="text-white fw-semibold mb-3">Dashboards</h6>
+                    <ul class="list-unstyled" style="font-size: 0.85rem;">
+                        <li class="mb-2"><a href="{% url 'student:dashboard' %}" class="text-white-50 text-decoration-none">Student Portal</a></li>
+                        <li class="mb-2"><a href="{% url 'faculty:dashboard' %}" class="text-white-50 text-decoration-none">Faculty Portal</a></li>
+                        <li class="mb-2"><a href="{% url 'staff:dashboard' %}" class="text-white-50 text-decoration-none">Facility Manager Portal</a></li>
+                        <li class="mb-2"><a href="{% url 'admin_panel:dashboard' %}" class="text-white-50 text-decoration-none">Super Admin Panel</a></li>
+                        <li class="mb-2"><a href="/api/docs/" target="_blank" class="text-warning text-decoration-none">Swagger REST API</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-4">
+                    <h6 class="text-white fw-semibold mb-3">Campus Helpdesk</h6>
+                    <p style="font-size: 0.85rem;" class="text-white-50 mb-1">Central University Campus Support</p>
+                    <p style="font-size: 0.85rem;" class="text-white-50 mb-1">Email: facilities@unibook.campus.edu</p>
+                    <p style="font-size: 0.85rem;" class="text-white-50 mb-1">Emergency Desk: +91 (020) 2590-8000</p>
+                </div>
+            </div>
+
+            <hr class="border-secondary my-4">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center" style="font-size: 0.8rem;">
+                <p class="mb-0 text-white-50">&copy; 2026 UniBook - CampusEase System. All rights reserved.</p>
+                <div class="d-flex gap-3">
+                    <a href="{% url 'public:about' %}" class="text-white-50 text-decoration-none">About Platform</a>
+                    <a href="{% url 'public:contact' %}" class="text-white-50 text-decoration-none">Support & Feedback</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Render lucide icons
+        lucide.createIcons();
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

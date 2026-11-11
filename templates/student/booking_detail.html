@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Pass {{ booking.booking_reference }} | UniBook{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Booking Pass Card (Printable) -->
+            <div class="card card-custom p-4 shadow-sm border-2" id="printablePass" style="border-top: 6px solid var(--brand-blue) !important;">
+                <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i data-lucide="building-2" style="stroke: var(--brand-teal);"></i>
+                            <h5 class="fw-bold mb-0 text-navy">UniBook Campus Pass</h5>
+                        </div>
+                        <small class="text-muted">Official University Facility Reservation</small>
+                    </div>
+                    <div>
+                        {% if booking.status == 'confirmed' %}
+                            <span class="badge badge-status-confirmed fs-6">Confirmed</span>
+                        {% elif booking.status == 'pending' %}
+                            <span class="badge badge-status-pending fs-6">Pending Approval</span>
+                        {% elif booking.status == 'checked_in' %}
+                            <span class="badge badge-status-checked-in fs-6">Checked In</span>
+                        {% elif booking.status == 'cancelled' %}
+                            <span class="badge badge-status-cancelled fs-6">Cancelled</span>
+                        {% elif booking.status == 'rejected' %}
+                            <span class="badge bg-danger fs-6">Rejected</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Reference & QR Code Section -->
+                <div class="text-center my-3 p-3 bg-light rounded-3 border">
+                    <div class="small text-muted mb-1 text-uppercase fw-semibold" style="letter-spacing: 1px;">Booking Reference</div>
+                    <h3 class="fw-bold text-primary mb-3">{{ booking.booking_reference }}</h3>
+
+                    {% if booking.qr_code %}
+                        <img src="{{ booking.qr_code.url }}" alt="Entry Pass QR Code" class="img-fluid rounded border shadow-sm p-2 bg-white" style="width: 200px; height: 200px;">
+                    {% else %}
+                        <div class="p-4 bg-white rounded border d-inline-block text-muted small">
+                            QR Pass generating...
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+                        Scan at entrance reader &bull; Token: <span class="font-monospace">{{ booking.token }}</span>
+                    </div>
+                </div>
+
+                <!-- Reservation Details Table -->
+                <div class="table-responsive mb-4">
+                    <table class="table table-sm align-middle small mb-0">
+                        <tbody>
+                            <tr>
+                                <th class="text-muted" style="width: 35%;">Facility</th>
+                                <td class="fw-bold">{{ booking.facility.name }} ({{ booking.facility.category.name }})</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Location</th>
+                                <td>{{ booking.facility.building }}, {{ booking.facility.floor }} &bull; {{ booking.facility.campus }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Reserved By</th>
+                                <td>{{ booking.user.get_full_name|default:booking.user.username }} ({{ booking.user.role|title }})</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Date</th>
+                                <td class="fw-semibold">{{ booking.booking_date|date:"l, F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Time Slot</th>
+                                <td class="fw-semibold">{{ booking.start_time|time:"H:i" }} - {{ booking.end_time|time:"H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Participants</th>
+                                <td>{{ booking.participant_count }} person{{ booking.participant_count|pluralize }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Purpose</th>
+                                <td>{{ booking.purpose|default:"General usage" }}</td>
+                            </tr>
+                            <tr>
+                                <th class="text-muted">Payment</th>
+                                <td>
+                                    {% if booking.payment_status == 'paid' %}
+                                        <span class="badge bg-success">Paid</span>
+                                    {% elif booking.payment_status == 'free' %}
+                                        <span class="badge bg-secondary">Free</span>
+                                    {% elif booking.payment_status == 'pending' %}
+                                        <a href="{% url 'payments:checkout' booking.id %}" class="btn btn-warning btn-sm py-0 px-2 fw-semibold">
+                                            Pay ₹{{ booking.facility.booking_price }}
+                                        </a>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ booking.get_payment_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% if booking.checked_in_at %}
+                                <tr class="table-success">
+                                    <th class="text-muted">Checked In At</th>
+                                    <td class="fw-semibold">{{ booking.checked_in_at|date:"Y-m-d H:i" }} by {{ booking.checked_in_by.username|default:"Staff" }}</td>
+                                </tr>
+                            {% endif %}
+                            {% if booking.rejection_reason %}
+                                <tr class="table-danger">
+                                    <th class="text-danger">Rejection Reason</th>
+                                    <td>{{ booking.rejection_reason }}</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex flex-wrap gap-2 justify-content-between pt-3 border-top">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                        <i data-lucide="printer" style="width: 14px; height: 14px; display: inline-block;"></i> Print Pass
+                    </button>
+
+                    {% if booking.can_be_cancelled %}
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i data-lucide="x-circle" style="width: 14px; height: 14px; display: inline-block;"></i> Cancel Reservation
+                        </button>
+                    {% endif %}
+
+                    <a href="{% url 'bookings:my_bookings' %}" class="btn btn-light btn-sm text-secondary">
+                        &larr; Back to My Bookings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Booking Modal -->
+{% if booking.can_be_cancelled %}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{% url 'bookings:booking_cancel' booking.id %}" method="POST" class="modal-content">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel">Cancel Reservation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-secondary mb-3">
+                    Are you sure you want to cancel your reservation for <strong>{{ booking.facility.name }}</strong> on <strong>{{ booking.booking_date }} ({{ booking.start_time|time:"H:i" }} - {{ booking.end_time|time:"H:i" }})</strong>?
+                </p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary">Reason for Cancellation</label>
+                    <textarea name="reason" class="form-control form-control-sm" rows="3" placeholder="Change of plans, schedule conflict, etc." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Keep Booking</button>
+                <button type="submit" class="btn btn-danger btn-sm">Confirm Cancellation</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

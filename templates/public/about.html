@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}About UniBook | University Facility System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card card-custom p-4 p-md-5">
+                <span class="badge bg-teal px-3 py-2 text-white mb-3 align-self-start" style="background-color: var(--brand-teal);">Enterprise Campus Technology</span>
+                <h1 class="fw-bold mb-3">About UniBook (CampusEase)</h1>
+                <p class="lead text-secondary mb-4">
+                    UniBook is an advanced university facility reservation and operational management platform engineered with Python, Django 6, Django REST Framework, and MySQL 8.
+                </p>
+
+                <hr class="my-4">
+
+                <h4 class="fw-bold mb-2">Our Mission</h4>
+                <p class="text-secondary small mb-4" style="line-height: 1.7;">
+                    University campuses host hundreds of high-value resources: state-of-the-art supercomputing laboratories, seminar complexes, auditoriums, Olympic-standard swimming pools, sports courts, and student dining facilities. UniBook replaces fragmented manual register logs, email chains, and double-booking disputes with an automated, synchronized, real-time platform.
+                </p>
+
+                <h4 class="fw-bold mb-3">Core Architectural Highlights</h4>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h6 class="fw-bold text-primary mb-1"><i data-lucide="lock" style="width: 16px; height: 16px; display: inline-block;"></i> Conflict Prevention Engine</h6>
+                            <p class="text-muted small mb-0">Employs atomic database transactions with row-level locks (<code>select_for_update()</code>) to guarantee zero double-bookings.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h6 class="fw-bold text-success mb-1"><i data-lucide="qr-code" style="width: 16px; height: 16px; display: inline-block;"></i> Cryptographic QR Entry Passes</h6>
+                            <p class="text-muted small mb-0">Every confirmed booking generates a tamper-evident QR code token verified in milliseconds by facility entrance scanners.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h6 class="fw-bold text-teal mb-1"><i data-lucide="users" style="width: 16px; height: 16px; display: inline-block;"></i> Multi-Tier Role-Based Access</h6>
+                            <p class="text-muted small mb-0">Distinct, secure portals for Students, Faculty Members, Facility Managers, and Super Administrators.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h6 class="fw-bold text-warning mb-1"><i data-lucide="bar-chart-2" style="width: 16px; height: 16px; display: inline-block;"></i> Real-Time Utilization Analytics</h6>
+                            <p class="text-muted small mb-0">Dynamic Chart.js visualizations for peak hour demand, facility occupancy rates, and revenue exportable to CSV.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 border text-center">
+                    <div class="small text-muted mb-2">Designed and deployed for University Campus Operations</div>
+                    <a href="{% url 'public:directory' %}" class="btn btn-unibook-primary btn-sm px-4">Browse Campus Facilities</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

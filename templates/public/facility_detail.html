@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block title %}{{ facility.name }} | UniBook{% endblock %}
+
+{% block extra_head %}
+<style>
+    .slot-pill {
+        border: 1px solid #CBD5E1;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        background: #FFFFFF;
+    }
+    .slot-pill:hover:not(.slot-disabled) {
+        border-color: var(--brand-blue);
+        background-color: #EFF6FF;
+    }
+    .slot-pill.active {
+        border-color: var(--brand-blue);
+        background-color: var(--brand-blue);
+        color: #FFFFFF !important;
+        font-weight: 600;
+    }
+    .slot-pill.active small {
+        color: #E0E7FF !important;
+    }
+    .slot-disabled {
+        background-color: #F1F5F9;
+        color: #94A3B8;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    #calendar {
+        max-height: 480px;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="{% url 'public:home' %}" class="text-decoration-none">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'public:directory' %}" class="text-decoration-none">Facilities</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'public:directory' %}?category={{ facility.category.slug }}" class="text-decoration-none">{{ facility.category.name }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ facility.name }}</li>
+        </ol>
+    </nav>
+
+    <!-- Facility Overview Card -->
+    <div class="card card-custom p-4 mb-4">
+        <div class="row g-4 align-items-center">
+            <div class="col-lg-5">
+                <div class="rounded-3 overflow-hidden shadow-sm" style="max-height: 280px;">
+                    {% if facility.image %}
+                        <img src="{{ facility.image.url }}" alt="{{ facility.name }}" class="w-100 h-100 object-fit-cover">
+                    {% else %}
+                        <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop&q=80" alt="{{ facility.name }}" class="w-100 h-100 object-fit-cover">
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <span class="badge bg-unibook-navy text-white px-2 py-1">{{ facility.category.name }}</span>
+                    {% if facility.facility_status == 'active' %}
+                        <span class="badge bg-success">Active & Bookable</span>
+                    {% elif facility.facility_status == 'maintenance' %}
+                        <span class="badge bg-warning text-dark">Under Maintenance</span>
+                    {% else %}
+                        <span class="badge bg-danger">{{ facility.get_facility_status_display }}</span>
+                    {% endif %}
+                    {% if facility.is_exclusive %}
+                        <span class="badge bg-secondary">Exclusive Hall</span>
+                    {% else %}
+                        <span class="badge bg-info text-dark">Shared Capacity</span>
+                    {% endif %}
+                </div>
+
+                <h2 class="fw-bold mb-2">{{ facility.name }}</h2>
+                <p class="text-muted small mb-3">
+                    <i data-lucide="map-pin" style="width: 15px; height: 15px; display: inline-block;"></i>
+                    {{ facility.building }}, {{ facility.floor }}{% if facility.room_number %}, Room {{ facility.room_number }}{% endif %} &bull; {{ facility.campus }}
+                </p>
+
+                <p class="text-secondary small mb-3">{{ facility.description }}</p>
+
+                <div class="row g-2 pt-2 border-top small">
+                    <div class="col-6 col-sm-3">
+                        <span class="text-muted d-block">Capacity</span>
+                        <strong class="fs-6">{{ facility.capacity }} people</strong>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <span class="text-muted d-block">Hours</span>
+                        <strong class="fs-6">{{ facility.opening_time|time:"H:i" }} - {{ facility.closing_time|time:"H:i" }}</strong>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <span class="text-muted d-block">Price / Slot</span>
+                        <strong class="fs-6 text-primary">{% if facility.is_free %}Free{% else %}₹{{ facility.booking_price }}{% endif %}</strong>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <span class="text-muted d-block">Advance Days</span>
+                        <strong class="fs-6">{{ facility.max_advance_booking_days }} Days</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Engine & Interactive Schedule -->
+    <div class="row g-4 mb-4">
+        <!-- Left: Slot Booking Engine Form -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+                    <i data-lucide="calendar-check" class="text-primary" style="width: 22px; height: 22px;"></i>
+                    Reserve a Time Slot
+                </h4>
+                <p class="text-muted small mb-3">Select your date to calculate real-time available slots.</p>
+
+                {% if user.is_authenticated %}
+                    <form action="{% url 'bookings:booking_create' facility.slug %}" method="POST" id="bookingForm">
+                        {% csrf_token %}
+
+                        <!-- Date Selection -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Reservation Date</label>
+                            <input type="date" id="slotDatePicker" name="booking_date" class="form-control"
+                                   min="{{ today_str }}" max="{{ max_date_str }}" value="{{ today_str }}" required>
+                        </div>
+
+                        <!-- Slots Grid -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary d-flex justify-content-between align-items-center">
+                                <span>Available Time Slots</span>
+                                <span id="slotLoadingSpinner" class="spinner-border spinner-border-sm text-primary d-none" role="status"></span>
+                            </label>
+                            
+                            <div id="slotsContainer" class="row g-2">
+                                <!-- Dynamic slots loaded via JS -->
+                            </div>
+                            <div id="noSlotsAlert" class="alert alert-warning small py-2 d-none">
+                                No available slots for this date. The facility may be closed or under maintenance.
+                            </div>
+                        </div>
+
+                        <!-- Hidden start and end time inputs populated by clicked slot -->
+                        <input type="hidden" name="start_time" id="inputStartTime" required>
+                        <input type="hidden" name="end_time" id="inputEndTime" required>
+
+                        <!-- Selected Slot Summary Alert -->
+                        <div id="selectedSlotSummary" class="alert alert-primary py-2 px-3 small d-none">
+                            <strong>Selected Slot:</strong> <span id="selectedSlotText">--</span>
+                        </div>
+
+                        <!-- Attendees / Participants -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-secondary">Participants / Attendees</label>
+                                <input type="number" name="participant_count" class="form-control form-control-sm"
+                                       value="1" min="1" max="{{ facility.capacity }}" required>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-secondary">Approval Status</label>
+                                <input type="text" class="form-control form-control-sm bg-light"
+                                       value="{% if facility.approval_requirement %}Requires Staff Approval{% else %}Instant Confirmation{% endif %}" readonly>
+                            </div>
+                        </div>
+
+                        <!-- Purpose of Booking -->
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-secondary">Purpose / Event Title</label>
+                            <input type="text" name="purpose" class="form-control form-control-sm"
+                                   placeholder="e.g. Badminton practice, AI Research study, Seminar rehearsal" required>
+                        </div>
+
+                        <!-- Faculty Recurring Booking Option -->
+                        {% if user.is_faculty %}
+                            <div class="p-3 bg-light rounded-3 mb-3 border">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" id="recurringSwitch" name="is_recurring">
+                                    <label class="form-check-label small fw-semibold" for="recurringSwitch">
+                                        Faculty Privilege: Recurring Weekly Reservation
+                                    </label>
+                                </div>
+                                <div id="recurringRuleField" class="d-none">
+                                    <select name="recurring_rule" class="form-select form-select-sm">
+                                        <option value="weekly_semester">Every week for entire current semester</option>
+                                        <option value="weekly_4_weeks">Every week for next 4 weeks</option>
+                                    </select>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" id="btnSubmitBooking" class="btn btn-unibook-primary py-2" disabled>
+                                Confirm Reservation
+                            </button>
+                        </div>
+                    </form>
+                {% else %}
+                    <div class="p-4 text-center bg-light rounded-3 border">
+                        <i data-lucide="lock" class="text-secondary mx-auto mb-2" style="width: 32px; height: 32px;"></i>
+                        <h6 class="fw-bold">Sign In to Book This Facility</h6>
+                        <p class="text-muted small mb-3">Reservations are open to university students, faculty members, and verified campus staff.</p>
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-unibook-primary btn-sm px-4">
+                            Log In to Proceed
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: FullCalendar Interactive Schedule View -->
+        <div class="col-lg-6">
+            <div class="card card-custom p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i data-lucide="calendar" class="text-primary" style="width: 20px; height: 20px;"></i>
+                        Schedule Calendar
+                    </h5>
+                    <span class="badge bg-light text-dark border">Live Schedule</span>
+                </div>
+                <div id="calendar" class="p-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operating Hours & Rules -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i data-lucide="clock" class="text-teal" style="width: 20px; height: 20px;"></i>
+                    Operating Hours Schedule
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle small mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Day</th>
+                                <th>Operating Hours</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for oh in operating_hours %}
+                                <tr>
+                                    <td class="fw-semibold">{{ oh.get_day_of_week_display }}</td>
+                                    <td>
+                                        {% if oh.is_closed %}
+                                            <span class="text-muted">--</span>
+                                        {% else %}
+                                            {{ oh.opening_time|time:"H:i" }} - {{ oh.closing_time|time:"H:i" }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if oh.is_closed %}
+                                            <span class="badge bg-danger">Closed</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Open</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-muted">Standard daily hours: {{ facility.opening_time|time:"H:i" }} - {{ facility.closing_time|time:"H:i" }} (Mon - Sun)</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card card-custom p-4 h-100">
+                <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <i data-lucide="shield-alert" class="text-primary" style="width: 20px; height: 20px;"></i>
+                    Booking Rules & Cancellation Policies
+                </h5>
+                <ul class="small text-secondary ps-3 mb-3" style="line-height: 1.6;">
+                    <li><strong>Advance Notice:</strong> Reservations can be made up to {{ facility.max_advance_booking_days }} days in advance.</li>
+                    <li><strong>Slot Duration:</strong> Standard booking duration is {{ facility.slot_duration }} minutes (min: {{ facility.min_booking_duration }}m, max: {{ facility.max_booking_duration }}m).</li>
+                    <li><strong>Cancellation Policy:</strong> Free cancellation up to {{ facility.cancellation_deadline }} hours prior to reservation start time.</li>
+                    <li><strong>Entry Verification:</strong> QR booking pass must be scanned upon arrival at the facility entrance.</li>
+                    <li><strong>University Conduct:</strong> Users must abide by campus facility codes of conduct.</li>
+                </ul>
+
+                {% if user.is_authenticated %}
+                    <div class="mt-auto pt-3 border-top">
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#complaintModal">
+                            <i data-lucide="alert-triangle" style="width: 14px; height: 14px; display: inline-block;"></i> Report Maintenance Issue / Complaint
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews Section -->
+    <div class="card card-custom p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Student & Faculty Reviews</h4>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fs-5 fw-bold text-warning">{{ avg_rating }}★</span>
+                    <span class="text-muted small">Based on {{ reviews.count }} review{{ reviews.count|pluralize }}</span>
+                </div>
+            </div>
+            {% if user.is_authenticated %}
+                <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#reviewFormCollapse">
+                    <i data-lucide="message-square-plus" style="width: 14px; height: 14px; display: inline-block;"></i> Write a Review
+                </button>
+            {% endif %}
+        </div>
+
+        {% if user.is_authenticated %}
+            <!-- Review Submission Form -->
+            <div class="collapse mb-4" id="reviewFormCollapse">
+                <form action="{% url 'reviews:submit_review' facility.slug %}" method="POST" class="p-3 bg-light rounded-3 border">
+                    {% csrf_token %}
+                    <h6 class="fw-bold mb-2">Share Your Experience</h6>
+                    <div class="row g-2 mb-2">
+                        <div class="col-sm-4">
+                            <label class="form-label small fw-semibold">Your Rating</label>
+                            <select name="rating" class="form-select form-select-sm">
+                                <option value="5" selected>5 Stars (Excellent)</option>
+                                <option value="4">4 Stars (Good)</option>
+                                <option value="3">3 Stars (Average)</option>
+                                <option value="2">2 Stars (Poor)</option>
+                                <option value="1">1 Star (Very Poor)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Feedback & Notes</label>
+                        <textarea name="comment" class="form-control form-control-sm" rows="3" placeholder="How was the equipment, cleanliness, and availability?" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-unibook-primary btn-sm">Submit Review</button>
+                </form>
+            </div>
+        {% endif %}
+
+        <div class="row g-3">
+            {% for r in reviews %}
+                <div class="col-md-6">
+                    <div class="p-3 border rounded-3 bg-light h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-semibold text-dark small">{{ r.user.get_full_name|default:r.user.username }}</span>
+                            <span class="text-warning small fw-bold">{{ r.rating }} ★</span>
+                        </div>
+                        <p class="text-secondary small mb-1">{{ r.comment }}</p>
+                        <small class="text-muted" style="font-size: 0.75rem;">{{ r.created_at|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-4 text-muted small">
+                    No reviews yet. Be the first to review this facility after your session!
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Complaint / Maintenance Modal -->
+{% if user.is_authenticated %}
+<div class="modal fade" id="complaintModal" tabindex="-1" aria-labelledby="complaintModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form action="{% url 'reviews:submit_complaint' facility.slug %}" method="POST" class="modal-content">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="complaintModalLabel">Report Issue on {{ facility.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Issue Title</label>
+                    <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. Broken AC in Lab, Net damaged on Court 2" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Detailed Description</label>
+                    <textarea name="description" class="form-control form-control-sm" rows="4" placeholder="Describe the maintenance or cleanliness concern..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger btn-sm">Submit Maintenance Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const facilityId = {{ facility.id }};
+        const datePicker = document.getElementById('slotDatePicker');
+        const slotsContainer = document.getElementById('slotsContainer');
+        const noSlotsAlert = document.getElementById('noSlotsAlert');
+        const spinner = document.getElementById('slotLoadingSpinner');
+        const inputStart = document.getElementById('inputStartTime');
+        const inputEnd = document.getElementById('inputEndTime');
+        const summaryAlert = document.getElementById('selectedSlotSummary');
+        const summaryText = document.getElementById('selectedSlotText');
+        const btnSubmit = document.getElementById('btnSubmitBooking');
+
+        // 1. Fetch slots dynamically when date changes
+        function fetchSlots(dateVal) {
+            if (!slotsContainer) return;
+            spinner.classList.remove('d-none');
+            slotsContainer.innerHTML = '';
+            noSlotsAlert.classList.add('d-none');
+            inputStart.value = '';
+            inputEnd.value = '';
+            summaryAlert.classList.add('d-none');
+            if (btnSubmit) btnSubmit.disabled = true;
+
+            fetch(`/api/facilities/${facilityId}/availability/?date=${dateVal}`)
+                .then(res => res.json())
+                .then(data => {
+                    spinner.classList.add('d-none');
+                    if (!data.slots || data.slots.length === 0) {
+                        noSlotsAlert.classList.remove('d-none');
+                        return;
+                    }
+
+                    let availableCount = 0;
+                    data.slots.forEach(slot => {
+                        const col = document.createElement('div');
+                        col.className = 'col-4 col-sm-3';
+
+                        const pill = document.createElement('div');
+                        pill.className = `slot-pill ${slot.is_available ? '' : 'slot-disabled'}`;
+                        pill.innerHTML = `
+                            <div>${slot.start_time} - ${slot.end_time}</div>
+                            <small class="text-muted d-block" style="font-size: 0.72rem;">${slot.status_label}</small>
+                        `;
+
+                        if (slot.is_available) {
+                            availableCount++;
+                            pill.addEventListener('click', function () {
+                                document.querySelectorAll('.slot-pill').forEach(p => p.classList.remove('active'));
+                                pill.classList.add('active');
+                                inputStart.value = slot.start_time;
+                                inputEnd.value = slot.end_time;
+                                summaryText.textContent = `${dateVal} from ${slot.start_time} to ${slot.end_time} (${slot.status_label})`;
+                                summaryAlert.classList.remove('d-none');
+                                if (btnSubmit) btnSubmit.disabled = false;
+                            });
+                        }
+
+                        col.appendChild(pill);
+                        slotsContainer.appendChild(col);
+                    });
+
+                    if (availableCount === 0) {
+                        noSlotsAlert.classList.remove('d-none');
+                    }
+                })
+                .catch(err => {
+                    spinner.classList.add('d-none');
+                    console.error('Error fetching slots:', err);
+                });
+        }
+
+        if (datePicker) {
+            datePicker.addEventListener('change', function () {
+                fetchSlots(this.value);
+            });
+            // Initial load for today
+            fetchSlots(datePicker.value);
+        }
+
+        // Toggle faculty recurring rules switch
+        const recSwitch = document.getElementById('recurringSwitch');
+        const recField = document.getElementById('recurringRuleField');
+        if (recSwitch && recField) {
+            recSwitch.addEventListener('change', function () {
+                if (this.checked) {
+                    recField.classList.remove('d-none');
+                } else {
+                    recField.classList.add('d-none');
+                }
+            });
+        }
+
+        // 2. FullCalendar initialization
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'timeGridWeek,timeGridDay'
+                },
+                slotMinTime: '{{ facility.opening_time|time:"H:i:s" }}',
+                slotMaxTime: '{{ facility.closing_time|time:"H:i:s" }}',
+                allDaySlot: false,
+                events: `/api/facilities/${facilityId}/calendar-events/`,
+                eventClick: function(info) {
+                    alert(`Reservation: ${info.event.title}\nStatus: ${info.event.extendedProps.status || 'Confirmed'}`);
+                }
+            });
+            calendar.render();
+        }
+    });
+</script>
+{% endblock %}

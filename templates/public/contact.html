@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Campus Support | UniBook{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-custom p-4 p-md-5 shadow-sm">
+                <div class="text-center mb-4">
+                    <div class="mx-auto mb-2 p-3 rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i data-lucide="mail" class="text-primary" style="width: 28px; height: 28px;"></i>
+                    </div>
+                    <h3 class="fw-bold">Contact Campus Facility Services</h3>
+                    <p class="text-muted small">Have questions regarding a booking, equipment rental, or facility access? Reach out to our campus desk.</p>
+                </div>
+
+                <form method="POST" action="{% url 'public:contact' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Your Name</label>
+                        <input type="text" name="name" class="form-control form-control-sm" placeholder="e.g. Maya Chen" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">University Email</label>
+                        <input type="email" name="email" class="form-control form-control-sm" placeholder="maya.chen@campus.edu" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Subject</label>
+                        <select name="subject" class="form-select form-select-sm">
+                            <option value="General Inquiry">General Facility Inquiry</option>
+                            <option value="Booking Cancellation / Reschedule">Booking Cancellation / Reschedule</option>
+                            <option value="Equipment / Special Setup">Equipment / AV Setup Request</option>
+                            <option value="Lost & Found">Lost & Found in Facility</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-secondary">Message</label>
+                        <textarea name="message" class="form-control form-control-sm" rows="4" placeholder="How can our facility team assist you today?" required></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-unibook-primary py-2 fw-semibold">Send Message to Campus Desk</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

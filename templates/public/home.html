@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}UniBook | Campus Facility Reservation Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #172554 0%, #1e3a8a 60%, #0f172a 100%); color: #ffffff;">
+    <div class="container py-4">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-7">
+                <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(20, 184, 166, 0.2); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.4);">
+                    <i data-lucide="sparkles" style="width: 14px; height: 14px; display: inline-block;"></i> Centralized University Reservation Engine
+                </span>
+                <h1 class="display-4 fw-extrabold mb-3" style="letter-spacing: -1px; font-weight: 800;">
+                    Your Campus. Your Facilities. <span style="color: #38bdf8;">One Platform.</span>
+                </h1>
+                <p class="lead text-white-50 mb-4" style="font-size: 1.15rem; max-width: 600px;">
+                    Seamlessly discover, check real-time availability, and reserve campus gyms, messes, badminton & basketball courts, laboratories, seminar halls, and auditoriums with instant QR passes.
+                </p>
+
+                <!-- Search Box -->
+                <form action="{% url 'public:directory' %}" method="GET" class="card p-2 shadow-lg mb-4" style="border-radius: 14px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95);">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-md-7">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-0 text-muted">
+                                    <i data-lucide="search" style="width: 18px; height: 18px;"></i>
+                                </span>
+                                <input type="text" name="q" class="form-control border-0 ps-0" placeholder="Search facilities, courts, labs or halls..." style="box-shadow: none;">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select name="category" class="form-select border-0 text-secondary" style="box-shadow: none;">
+                                <option value="">All Categories</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.slug }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-unibook-primary w-100 py-2">
+                                Find
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="d-flex flex-wrap gap-4 pt-2 text-white-50" style="font-size: 0.9rem;">
+                    <div><strong class="text-white">{{ total_facilities }}+</strong> Campus Facilities</div>
+                    <div><strong class="text-white">{{ total_bookings }}+</strong> Reservations Logged</div>
+                    <div><strong class="text-white">100%</strong> Zero Double-Bookings</div>
+                </div>
+            </div>
+
+            <div class="col-lg-5 text-center">
+                <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-10 shadow-lg">
+                    <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop&q=80" alt="University Campus" class="img-fluid rounded-3 shadow">
+                    <div class="mt-3 text-start px-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success"><i data-lucide="check-circle" style="width: 12px; height: 12px; display: inline-block;"></i> Real-Time Availability</span>
+                            <small class="text-white-50">Main Campus & Complex</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Facility Categories Section -->
+<section class="py-5 bg-white border-bottom">
+    <div class="container py-3">
+        <div class="text-center mb-5">
+            <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Explore by Category</h6>
+            <h2 class="fw-bold">All Campus Resources at Your Fingertips</h2>
+            <p class="text-muted">Select a category to view operating hours, capacities, and slot openings.</p>
+        </div>
+
+        <div class="row g-3">
+            {% for cat in categories %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a href="{% url 'public:directory' %}?category={{ cat.slug }}" class="text-decoration-none">
+                        <div class="card card-custom card-hover h-100 p-3 text-center">
+                            <div class="mx-auto mb-2 p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: #EFF6FF; color: var(--brand-blue);">
+                                <i data-lucide="{{ cat.icon|default:'building' }}" style="width: 24px; height: 24px;"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-1">{{ cat.name }}</h6>
+                            <small class="text-muted">{{ cat.fac_count|default:cat.facilities.count }} active location{{ cat.fac_count|pluralize }}</small>
+                        </div>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Facilities -->
+<section class="py-5 bg-light">
+    <div class="container py-3">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Ready for Booking</h6>
+                <h2 class="fw-bold mb-0">Featured Facilities</h2>
+            </div>
+            <a href="{% url 'public:directory' %}" class="btn btn-outline-primary btn-sm fw-semibold">
+                Browse All ({{ total_facilities }}) &rarr;
+            </a>
+        </div>
+
+        <div class="row g-4">
+            {% for f in featured_facilities %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card card-custom card-hover h-100 overflow-hidden">
+                        <div class="position-relative" style="height: 180px; background-color: #e2e8f0;">
+                            {% if f.image %}
+                                <img src="{{ f.image.url }}" alt="{{ f.name }}" class="w-100 h-100 object-fit-cover">
+                            {% else %}
+                                <img src="https://images.unsplash.com/photo-1576495199011-ef9017460842?w=600&auto=format&fit=crop&q=80" alt="{{ f.name }}" class="w-100 h-100 object-fit-cover">
+                            {% endif %}
+                            <span class="position-absolute top-0 start-0 m-3 badge bg-unibook-navy text-white px-2 py-1">
+                                {{ f.category.name }}
+                            </span>
+                            {% if f.is_free %}
+                                <span class="position-absolute top-0 end-0 m-3 badge bg-success text-white">Free</span>
+                            {% else %}
+                                <span class="position-absolute top-0 end-0 m-3 badge bg-primary text-white">₹{{ f.booking_price }}/slot</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body p-4 d-flex flex-column">
+                            <h5 class="fw-bold mb-1">{{ f.name }}</h5>
+                            <p class="text-muted small mb-2">
+                                <i data-lucide="map-pin" style="width: 14px; height: 14px; display: inline-block;"></i> {{ f.building }}, {{ f.floor }}
+                            </p>
+                            <p class="text-secondary small flex-grow-1" style="line-height: 1.4;">
+                                {{ f.description|truncatewords:16 }}
+                            </p>
+
+                            <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-muted mb-3">
+                                <div><i data-lucide="users" style="width: 14px; height: 14px; display: inline-block;"></i> Cap: {{ f.capacity }}</div>
+                                <div><i data-lucide="clock" style="width: 14px; height: 14px; display: inline-block;"></i> {{ f.slot_duration }} mins/slot</div>
+                            </div>
+
+                            <a href="{% url 'public:facility_detail' f.slug %}" class="btn btn-unibook-primary w-100">
+                                Check Availability & Book
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12 text-center py-5">
+                    <p class="text-muted">No facilities found. Run <code>python manage.py seed_demo</code> to populate demo campus facilities.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Walkthrough -->
+<section class="py-5 bg-white border-top border-bottom">
+    <div class="container py-3">
+        <div class="text-center mb-5">
+            <h6 class="text-teal fw-bold text-uppercase" style="letter-spacing: 1px;">Effortless Experience</h6>
+            <h2 class="fw-bold">How UniBook Works</h2>
+            <p class="text-muted">Book any university resource in 4 simple steps.</p>
+        </div>
+
+        <div class="row g-4 text-center">
+            <div class="col-md-3">
+                <div class="p-4 rounded-4 bg-light h-100 border">
+                    <div class="fs-1 fw-bold text-primary mb-2">01</div>
+                    <h5 class="fw-bold mb-2">Discover Facility</h5>
+                    <p class="text-muted small mb-0">Search gyms, mess meals, labs, or sports courts across all campus buildings.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4 rounded-4 bg-light h-100 border">
+                    <div class="fs-1 fw-bold text-teal mb-2" style="color: var(--brand-teal);">02</div>
+                    <h5 class="fw-bold mb-2">Pick Time Slot</h5>
+                    <p class="text-muted small mb-0">View live, conflict-free availability slots generated directly from the backend engine.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4 rounded-4 bg-light h-100 border">
+                    <div class="fs-1 fw-bold text-primary mb-2">03</div>
+                    <h5 class="fw-bold mb-2">Instant Confirmation</h5>
+                    <p class="text-muted small mb-0">Lock your reservation atomically. Auto-approved or routed to facility manager.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-4 rounded-4 bg-light h-100 border">
+                    <div class="fs-1 fw-bold text-success mb-2">04</div>
+                    <h5 class="fw-bold mb-2">QR Pass Entry</h5>
+                    <p class="text-muted small mb-0">Scan your cryptographic QR pass at the entrance for seamless, touchless check-in.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Campus Announcements -->
+{% if announcements %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="mb-4">
+            <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Campus Notices</h6>
+            <h2 class="fw-bold mb-0">Announcements & Notices</h2>
+        </div>
+        <div class="row g-3">
+            {% for a in announcements %}
+                <div class="col-md-6">
+                    <div class="card card-custom p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary text-uppercase">{{ a.get_category_display }}</span>
+                            <small class="text-muted">{{ a.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        <h5 class="fw-bold mb-2">{{ a.title }}</h5>
+                        <p class="text-secondary small mb-0">{{ a.content }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- FAQ Section -->
+<section class="py-5 bg-white">
+    <div class="container py-3">
+        <div class="text-center mb-5">
+            <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Got Questions?</h6>
+            <h2 class="fw-bold">Frequently Asked Questions</h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="accordion" id="faqAccordion">
+                    <div class="accordion-item mb-2 border rounded">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                Who is eligible to book facilities on UniBook?
+                            </button>
+                        </h2>
+                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small">
+                                All active students, faculty members, researchers, and campus staff with a university ID can log in and reserve facilities. Some academic labs require faculty approval.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item mb-2 border rounded">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                How does double-booking prevention work?
+                            </button>
+                        </h2>
+                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small">
+                                The platform uses database-level row locks (<code>select_for_update()</code>) inside atomic transactions to verify real-time capacity and prevent conflicting reservations even under concurrent requests.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item mb-2 border rounded">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                How do I check in with my QR pass?
+                            </button>
+                        </h2>
+                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                            <div class="accordion-body text-secondary small">
+                                When your reservation is confirmed, a cryptographic QR pass is generated under "My Bookings". Simply show your phone screen to the facility staff scanner upon arrival.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
