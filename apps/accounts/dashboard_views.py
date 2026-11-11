@@ -216,3 +216,4 @@ def staff_approvals_view(request):
         return redirect('staff:approvals')
 
     return render(request, 'staff/approvals.html', {'pending_bookings': pending_bookings})
+

@@ -24,3 +24,4 @@ def generate_qr_code_image(token_str: str, booking_reference: str) -> ContentFil
     img.save(buffer, format='PNG')
     file_name = f"qr_{booking_reference}.png"
     return ContentFile(buffer.getvalue(), name=file_name)
+

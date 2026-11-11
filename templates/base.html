@@ -150,6 +150,10 @@
             font-weight: 600;
         }
 
+        .navbar.sticky-top {
+            z-index: 1040 !important;
+        }
+
         .footer {
             margin-top: auto;
             background-color: #0F172A;
@@ -196,11 +200,6 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link text-white-50 hover-white" href="{% url 'public:contact' %}">Contact</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-warning" href="/api/docs/" target="_blank">
-                            <i data-lucide="file-code" style="width: 16px; height: 16px; display: inline-block;"></i> API Docs
-                        </a>
                     </li>
                 </ul>
 
@@ -339,7 +338,6 @@
                         <li class="mb-2"><a href="{% url 'faculty:dashboard' %}" class="text-white-50 text-decoration-none">Faculty Portal</a></li>
                         <li class="mb-2"><a href="{% url 'staff:dashboard' %}" class="text-white-50 text-decoration-none">Facility Manager Portal</a></li>
                         <li class="mb-2"><a href="{% url 'admin_panel:dashboard' %}" class="text-white-50 text-decoration-none">Super Admin Panel</a></li>
-                        <li class="mb-2"><a href="/api/docs/" target="_blank" class="text-warning text-decoration-none">Swagger REST API</a></li>
                     </ul>
                 </div>
 
@@ -372,3 +370,4 @@
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
+

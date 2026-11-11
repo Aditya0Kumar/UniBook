@@ -6,3 +6,4 @@ app_name = 'gym'
 urlpatterns = [
     path('', views.gym_overview_view, name='overview'),
 ]
+

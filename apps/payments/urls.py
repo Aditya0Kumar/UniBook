@@ -6,3 +6,4 @@ app_name = 'payments'
 urlpatterns = [
     path('checkout/<int:booking_id>/', views.payment_checkout_view, name='checkout'),
 ]
+

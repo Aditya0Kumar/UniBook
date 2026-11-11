@@ -208,3 +208,4 @@ OK
 
 ## 📄 License
 Academic and Commercial Open License &copy; 2026 UniBook Project. Developed for university campus operations.
+

@@ -6,3 +6,4 @@ app_name = 'mess'
 urlpatterns = [
     path('menu/', views.mess_menu_view, name='menu'),
 ]
+

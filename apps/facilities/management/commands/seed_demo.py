@@ -680,3 +680,4 @@ class Command(BaseCommand):
         self.stdout.write("  - Faculty:          faculty_demo / FacultyPass123!")
         self.stdout.write("  - Student:          student_demo / StudentPass123!")
         self.stdout.write("=======================================================\n")
+

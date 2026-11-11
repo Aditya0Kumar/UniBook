@@ -6,3 +6,4 @@ app_name = 'faculty'
 urlpatterns = [
     path('dashboard/', dashboard_views.faculty_dashboard, name='dashboard'),
 ]
+

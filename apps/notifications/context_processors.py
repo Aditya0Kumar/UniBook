@@ -24,3 +24,4 @@ def notifications_context(request):
         'unread_notifications_count': 0,
         'campus_announcements': Announcement.objects.filter(is_active=True)[:3],
     }
+

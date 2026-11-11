@@ -17,3 +17,4 @@ urlpatterns = [
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='api_token_refresh'),
     path('api/auth/profile/', views.ProfileAPIView.as_view(), name='api_profile'),
 ]
+

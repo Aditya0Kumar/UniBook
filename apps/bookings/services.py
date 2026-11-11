@@ -534,3 +534,4 @@ def validate_and_checkin(token_or_reference: str, staff_user, ip_address: str = 
         'message': f"Pass Verified! Checked in {booking.user.get_full_name() or booking.user.username} for {booking.facility.name}.",
         'booking': booking
     }
+

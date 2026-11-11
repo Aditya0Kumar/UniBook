@@ -8,3 +8,4 @@ urlpatterns = [
     path('qr-scanner/', dashboard_views.staff_qr_scanner_view, name='qr_scanner'),
     path('approvals/', dashboard_views.staff_approvals_view, name='approvals'),
 ]
+

@@ -68,3 +68,4 @@ class BookingApprovalActionSerializer(serializers.Serializer):
 
 class QRCheckInSerializer(serializers.Serializer):
     token_or_reference = serializers.CharField(max_length=200)
+

@@ -14,3 +14,4 @@ urlpatterns = [
     path('api/facilities/<int:pk>/availability/', views.FacilityAvailabilityAPIView.as_view(), name='facility-availability-api'),
     path('api/facilities/<int:pk>/calendar-events/', views.FacilityCalendarEventsAPIView.as_view(), name='facility-calendar-events-api'),
 ]
+

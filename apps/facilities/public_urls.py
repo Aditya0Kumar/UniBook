@@ -10,3 +10,4 @@ urlpatterns = [
     path('facilities/', views.facility_directory_view, name='directory'),
     path('facilities/<slug:slug>/', views.facility_detail_view, name='facility_detail'),
 ]
+

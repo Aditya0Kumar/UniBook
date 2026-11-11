@@ -12,3 +12,4 @@ urlpatterns = [
     path('export/facilities/csv/', views.admin_export_facilities_csv, name='export_facilities_csv'),
     path('api/analytics-data/', views.AdminAnalyticsAPIView.as_view(), name='api_analytics_data'),
 ]
+

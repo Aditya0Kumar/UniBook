@@ -24,3 +24,4 @@ class IsOwnerOrStaff(permissions.BasePermission):
             return True
         user_field = getattr(obj, 'user', None)
         return user_field == request.user
+

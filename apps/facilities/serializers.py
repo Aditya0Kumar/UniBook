@@ -77,3 +77,4 @@ class HolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Holiday
         fields = ['id', 'name', 'date', 'description', 'is_university_wide']
+
