@@ -66,18 +66,18 @@
 
             <div class="col-lg-7">
                 <div class="d-flex flex-wrap gap-2 mb-2">
-                    <span class="badge bg-unibook-navy text-white px-2 py-1">{{ facility.category.name }}</span>
+                    <span class="badge rounded-pill text-white px-3 py-1" style="background-color: #181C32; font-size: 0.8rem;">{{ facility.category.name }}</span>
                     {% if facility.facility_status == 'active' %}
-                        <span class="badge bg-success">Active & Bookable</span>
+                        <span class="badge-pill-available">● Active & Bookable</span>
                     {% elif facility.facility_status == 'maintenance' %}
-                        <span class="badge bg-warning text-dark">Under Maintenance</span>
+                        <span class="badge-pill-limited">● Under Maintenance</span>
                     {% else %}
-                        <span class="badge bg-danger">{{ facility.get_facility_status_display }}</span>
+                        <span class="badge bg-danger rounded-pill px-3 py-1">{{ facility.get_facility_status_display }}</span>
                     {% endif %}
                     {% if facility.is_exclusive %}
-                        <span class="badge bg-secondary">Exclusive Hall</span>
+                        <span class="badge bg-light text-secondary border rounded-pill px-3 py-1">Exclusive Hall</span>
                     {% else %}
-                        <span class="badge bg-info text-dark">Shared Capacity</span>
+                        <span class="badge bg-light text-secondary border rounded-pill px-3 py-1">Shared Capacity</span>
                     {% endif %}
                 </div>
 
@@ -197,17 +197,17 @@
                         {% endif %}
 
                         <div class="d-grid mt-4">
-                            <button type="submit" id="btnSubmitBooking" class="btn btn-unibook-primary py-2" disabled>
+                            <button type="submit" id="btnSubmitBooking" class="btn btn-unibook-dark py-2 rounded-pill fw-semibold" disabled>
                                 Confirm Reservation
                             </button>
                         </div>
                     </form>
                 {% else %}
-                    <div class="p-4 text-center bg-light rounded-3 border">
+                    <div class="p-4 text-center bg-light rounded-4 border">
                         <i data-lucide="lock" class="text-secondary mx-auto mb-2" style="width: 32px; height: 32px;"></i>
                         <h6 class="fw-bold">Sign In to Book This Facility</h6>
                         <p class="text-muted small mb-3">Reservations are open to university students, faculty members, and verified campus staff.</p>
-                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-unibook-primary btn-sm px-4">
+                        <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-unibook-dark btn-sm px-4 rounded-pill">
                             Log In to Proceed
                         </a>
                     </div>

@@ -1,64 +1,585 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}UniBook | Campus Facility Reservation Platform{% endblock %}
+{% block title %}UniBook | University Facility Booking & Management{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Hero curved design */
+    .hero-container {
+        background: linear-gradient(135deg, #F0F4FF 0%, #E6EDFE 50%, #F5F7FF 100%);
+        border-radius: 0 0 40px 40px;
+        position: relative;
+    }
+
+    .hero-badge-pill {
+        background: #EEF2FF;
+        border: 1px solid #E0E7FF;
+        color: #3B52D4;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .search-pill-container {
+        border-radius: 9999px;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+        padding: 6px 8px 6px 20px;
+        max-width: 580px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-pill-container:focus-within {
+        border-color: #3B52D4;
+        box-shadow: 0 10px 35px rgba(59, 82, 212, 0.12);
+    }
+
+    .feature-circle-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .hero-img-mask {
+        border-radius: 36px 8px 36px 36px;
+        overflow: hidden;
+        border: 4px solid #FFFFFF;
+        box-shadow: 0 16px 40px -12px rgba(24, 28, 50, 0.18);
+        height: 380px;
+    }
+
+    /* Facility Showcase Card */
+    .facility-showcase-card {
+        border-radius: 20px;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        overflow: hidden;
+        transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    }
+
+    .facility-showcase-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 16px 32px -8px rgba(24, 28, 50, 0.09);
+        border-color: #CBD5E1;
+    }
+
+    .facility-card-img-wrap {
+        height: 165px;
+        position: relative;
+        background-color: #F1F5F9;
+        overflow: hidden;
+    }
+
+    .facility-card-img-wrap img {
+        transition: transform 0.4s ease;
+    }
+
+    .facility-showcase-card:hover .facility-card-img-wrap img {
+        transform: scale(1.05);
+    }
+
+    .facility-card-bottom {
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #FFFFFF;
+    }
+
+    .facility-icon-square {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #EFF6FF;
+        color: #3B52D4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .facility-arrow-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .facility-showcase-card:hover .facility-arrow-btn {
+        background: #181C32;
+        color: #FFFFFF;
+        border-color: #181C32;
+    }
+
+    /* My Bookings Card Section */
+    .my-bookings-container {
+        background: #F8FAFC;
+        border-radius: 28px;
+        border: 1px solid #E2E8F0;
+        padding: 32px;
+    }
+
+    .tab-pill-btn {
+        padding: 7px 20px;
+        border-radius: 9999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: none;
+        transition: all 0.15s ease;
+    }
+
+    .tab-pill-active {
+        background: #181C32;
+        color: #FFFFFF;
+    }
+
+    .tab-pill-inactive {
+        background: transparent;
+        color: #64748B;
+    }
+
+    .tab-pill-inactive:hover {
+        color: #181C32;
+        background: #F1F5F9;
+    }
+
+    .booking-strip-card {
+        border-radius: 18px;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        padding: 14px 20px;
+        position: relative;
+        transition: box-shadow 0.2s ease;
+    }
+
+    .booking-strip-card:hover {
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.05);
+    }
+
+    .booking-accent-bar {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 38px;
+        background: #3B52D4;
+        border-radius: 4px;
+    }
+
+    /* Mini Calendar */
+    .calendar-card {
+        border-radius: 22px;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        padding: 22px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    }
+
+    .cal-day-cell {
+        text-align: center;
+        padding: 6px 0;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        margin: 0 auto;
+        transition: all 0.15s ease;
+    }
+
+    .cal-day-cell:hover:not(.active) {
+        background: #F1F5F9;
+        color: #181C32;
+    }
+
+    .cal-day-cell.active {
+        background: #3B52D4 !important;
+        color: #FFFFFF !important;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(59, 82, 212, 0.3);
+    }
+
+    .cal-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: #3B52D4;
+        position: absolute;
+        bottom: 2px;
+    }
+
+    .cal-day-cell.active .cal-dot {
+        background-color: #FFFFFF;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="py-5" style="background: linear-gradient(135deg, #172554 0%, #1e3a8a 60%, #0f172a 100%); color: #ffffff;">
-    <div class="container py-4">
-        <div class="row align-items-center g-5">
+
+<!-- 1. HERO SECTION -->
+<section class="hero-container py-5">
+    <div class="container py-2 py-lg-4">
+        <div class="row align-items-center g-4 g-lg-5">
+            <!-- Left Hero Text & Search -->
             <div class="col-lg-7">
-                <span class="badge px-3 py-2 rounded-pill mb-3" style="background: rgba(20, 184, 166, 0.2); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.4);">
-                    <i data-lucide="sparkles" style="width: 14px; height: 14px; display: inline-block;"></i> Centralized University Reservation Engine
-                </span>
-                <h1 class="display-4 fw-extrabold mb-3" style="letter-spacing: -1px; font-weight: 800;">
-                    Your Campus. Your Facilities. <span style="color: #38bdf8;">One Platform.</span>
+                <!-- Platform Badge -->
+                <div class="hero-badge-pill mb-3">
+                    <i data-lucide="landmark" style="width: 14px; height: 14px;"></i>
+                    University Facility Booking Platform
+                </div>
+
+                <!-- Main Heading -->
+                <h1 class="display-5 fw-extrabold mb-3" style="color: #181C32; letter-spacing: -1.2px; font-weight: 800; line-height: 1.15;">
+                    Book University Facilities<br>
+                    in Just a Few Clicks
                 </h1>
-                <p class="lead text-white-50 mb-4" style="font-size: 1.15rem; max-width: 600px;">
-                    Seamlessly discover, check real-time availability, and reserve campus gyms, messes, badminton & basketball courts, laboratories, seminar halls, and auditoriums with instant QR passes.
+
+                <!-- Subtitle -->
+                <p class="lead mb-4" style="color: #64748B; font-size: 1.05rem; max-width: 540px; line-height: 1.6;">
+                    Reserve seminar halls, labs, sports grounds, and more — quick, simple, and hassle-free.
                 </p>
 
-                <!-- Search Box -->
-                <form action="{% url 'public:directory' %}" method="GET" class="card p-2 shadow-lg mb-4" style="border-radius: 14px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.95);">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-md-7">
-                            <div class="input-group">
-                                <span class="input-group-text bg-transparent border-0 text-muted">
-                                    <i data-lucide="search" style="width: 18px; height: 18px;"></i>
-                                </span>
-                                <input type="text" name="q" class="form-control border-0 ps-0" placeholder="Search facilities, courts, labs or halls..." style="box-shadow: none;">
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <select name="category" class="form-select border-0 text-secondary" style="box-shadow: none;">
-                                <option value="">All Categories</option>
-                                {% for cat in categories %}
-                                    <option value="{{ cat.slug }}">{{ cat.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="submit" class="btn btn-unibook-primary w-100 py-2">
-                                Find
-                            </button>
-                        </div>
-                    </div>
+                <!-- Floating Search Bar -->
+                <form action="{% url 'public:directory' %}" method="GET" class="search-pill-container d-flex align-items-center mb-4">
+                    <span class="text-muted d-flex align-items-center">
+                        <i data-lucide="search" style="width: 19px; height: 19px; color: #94A3B8;"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control border-0 bg-transparent ps-3 pe-2" placeholder="Search for facilities (e.g., Seminar Hall, Lab, Ground...)" style="box-shadow: none; font-size: 0.95rem; color: #1E293B;">
+                    <button type="submit" class="btn text-white px-4 py-2 fw-semibold shadow-xs" style="background: #181C32; border-radius: 9999px; font-size: 0.9rem; white-space: nowrap;">
+                        Search
+                    </button>
                 </form>
 
-                <div class="d-flex flex-wrap gap-4 pt-2 text-white-50" style="font-size: 0.9rem;">
-                    <div><strong class="text-white">{{ total_facilities }}+</strong> Campus Facilities</div>
-                    <div><strong class="text-white">{{ total_bookings }}+</strong> Reservations Logged</div>
-                    <div><strong class="text-white">100%</strong> Zero Double-Bookings</div>
+                <!-- 3 Feature Badges -->
+                <div class="d-flex flex-wrap align-items-center gap-4 pt-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="feature-circle-icon" style="background: #EEF2FF; color: #4F46E5;">
+                            <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+                        </div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold" style="color: #181C32; font-size: 0.85rem;">Real-time</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">Availability</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="feature-circle-icon" style="background: #EFF6FF; color: #2563EB;">
+                            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i>
+                        </div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold" style="color: #181C32; font-size: 0.85rem;">Instant</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">Booking</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="feature-circle-icon" style="background: #F0FDF4; color: #16A34A;">
+                            <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i>
+                        </div>
+                        <div style="line-height: 1.2;">
+                            <div class="fw-bold" style="color: #181C32; font-size: 0.85rem;">Secure &</div>
+                            <div class="text-muted" style="font-size: 0.8rem;">Approved</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="col-lg-5 text-center">
-                <div class="p-3 bg-white bg-opacity-10 rounded-4 border border-white border-opacity-10 shadow-lg">
-                    <img src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop&q=80" alt="University Campus" class="img-fluid rounded-3 shadow">
-                    <div class="mt-3 text-start px-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-success"><i data-lucide="check-circle" style="width: 12px; height: 12px; display: inline-block;"></i> Real-Time Availability</span>
-                            <small class="text-white-50">Main Campus & Complex</small>
+            <!-- Right Hero Image with architectural framing -->
+            <div class="col-lg-5">
+                <div class="hero-img-mask position-relative">
+                    <img src="{% static 'images/university-resource-center.jpg' %}" alt="University Resource Center" class="w-100 h-100 object-fit-cover">
+                    <!-- Overlay Badge -->
+                    <div class="position-absolute bottom-0 end-0 m-3 px-3 py-1 bg-white bg-opacity-95 rounded-pill shadow-sm small fw-semibold" style="color: #181C32; font-size: 0.75rem;">
+                        <i data-lucide="building-2" style="width: 12px; height: 12px; display: inline-block;"></i> University Resource Center
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2. BROWSE FACILITIES SECTION -->
+<section class="py-5 bg-white">
+    <div class="container py-2">
+        <!-- Section Header -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4">
+            <div>
+                <h2 class="fw-extrabold mb-1" style="color: #181C32; font-weight: 800; font-size: 1.75rem; letter-spacing: -0.5px;">
+                    Browse Facilities
+                </h2>
+                <p class="text-muted mb-0" style="font-size: 0.95rem;">
+                    Explore and book a wide range of university facilities for your academic and extracurricular needs.
+                </p>
+            </div>
+            <a href="{% url 'public:directory' %}" class="fw-bold text-decoration-none mt-2 mt-md-0 d-inline-flex align-items-center gap-1" style="color: #3B52D4; font-size: 0.95rem;">
+                View All Facilities <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+            </a>
+        </div>
+
+        <!-- 4 Facilities Row (Matches User Mockup) -->
+        <div class="row g-4">
+            <!-- 1. Seminar Hall -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="facility-showcase-card h-100 d-flex flex-column">
+                    <div class="facility-card-img-wrap">
+                        <img src="{% static 'facilities/seminar-hall-101.jpg' %}" alt="Seminar Hall" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=600&q=80';">
+                        <span class="position-absolute top-0 end-0 m-3 badge-pill-available">
+                            <span class="rounded-circle" style="width: 6px; height: 6px; background-color: #10B981;"></span> Available
+                        </span>
+                    </div>
+                    <div class="facility-card-bottom flex-grow-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="facility-icon-square">
+                                <i data-lucide="presentation" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #181C32; font-size: 0.95rem;">Seminar Hall</h6>
+                                <small class="text-muted d-block" style="font-size: 0.72rem;">Events &bull; Presentations &bull; Workshops</small>
+                            </div>
+                        </div>
+                        <a href="{% url 'public:directory' %}?category=seminar-hall" class="facility-arrow-btn" aria-label="View Seminar Halls">
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Computer Lab -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="facility-showcase-card h-100 d-flex flex-column">
+                    <div class="facility-card-img-wrap">
+                        <img src="{% static 'facilities/advanced-ai-cloud-lab.jpg' %}" alt="Computer Lab" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80';">
+                        <span class="position-absolute top-0 end-0 m-3 badge-pill-available">
+                            <span class="rounded-circle" style="width: 6px; height: 6px; background-color: #10B981;"></span> Available
+                        </span>
+                    </div>
+                    <div class="facility-card-bottom flex-grow-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="facility-icon-square">
+                                <i data-lucide="laptop" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #181C32; font-size: 0.95rem;">Computer Lab</h6>
+                                <small class="text-muted d-block" style="font-size: 0.72rem;">Coding &bull; Research &bull; Training</small>
+                            </div>
+                        </div>
+                        <a href="{% url 'public:directory' %}?category=computer-laboratory" class="facility-arrow-btn" aria-label="View Computer Labs">
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Sports Ground -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="facility-showcase-card h-100 d-flex flex-column">
+                    <div class="facility-card-img-wrap">
+                        <img src="{% static 'facilities/main-campus-football-stadium.jpg' %}" alt="Sports Ground" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1529900748604-07564a03e7a6?auto=format&fit=crop&w=600&q=80';">
+                        <span class="position-absolute top-0 end-0 m-3 badge-pill-available">
+                            <span class="rounded-circle" style="width: 6px; height: 6px; background-color: #10B981;"></span> Available
+                        </span>
+                    </div>
+                    <div class="facility-card-bottom flex-grow-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="facility-icon-square">
+                                <i data-lucide="activity" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #181C32; font-size: 0.95rem;">Sports Ground</h6>
+                                <small class="text-muted d-block" style="font-size: 0.72rem;">Football &bull; Cricket &bull; Athletics</small>
+                            </div>
+                        </div>
+                        <a href="{% url 'public:directory' %}?category=sports" class="facility-arrow-btn" aria-label="View Sports Facilities">
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Auditorium -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="facility-showcase-card h-100 d-flex flex-column">
+                    <div class="facility-card-img-wrap">
+                        <img src="{% static 'facilities/kalam-memorial-auditorium.jpg' %}" alt="Auditorium" class="w-100 h-100 object-fit-cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?auto=format&fit=crop&w=600&q=80';">
+                        <span class="position-absolute top-0 end-0 m-3 badge-pill-limited">
+                            <span class="rounded-circle" style="width: 6px; height: 6px; background-color: #F59E0B;"></span> Limited
+                        </span>
+                    </div>
+                    <div class="facility-card-bottom flex-grow-1">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="facility-icon-square">
+                                <i data-lucide="armchair" style="width: 18px; height: 18px;"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0" style="color: #181C32; font-size: 0.95rem;">Auditorium</h6>
+                                <small class="text-muted d-block" style="font-size: 0.72rem;">Conferences &bull; Cultural Events</small>
+                            </div>
+                        </div>
+                        <a href="{% url 'public:directory' %}?category=auditorium" class="facility-arrow-btn" aria-label="View Auditoriums">
+                            <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. MY BOOKINGS & MINI CALENDAR SECTION -->
+<section class="py-5" style="background-color: #FFFFFF;">
+    <div class="container">
+        <div class="my-bookings-container">
+            <div class="row g-4 align-items-center">
+                <!-- Left: My Bookings Strip -->
+                <div class="col-lg-8">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-3">
+                        <div>
+                            <h3 class="fw-extrabold mb-1" style="color: #181C32; font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px;">
+                                My Bookings
+                            </h3>
+                            <p class="text-muted small mb-0">Your upcoming and recent facility reservations.</p>
+                        </div>
+                        <div class="d-flex gap-1 mt-2 mt-sm-0 p-1 bg-white rounded-pill border">
+                            <button type="button" class="tab-pill-btn tab-pill-active" id="tabUpcoming">
+                                Upcoming ({% if user_bookings %}{{ user_bookings|length }}{% else %}2{% endif %})
+                            </button>
+                            <button type="button" class="tab-pill-btn tab-pill-inactive" id="tabPast">
+                                Past Bookings
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bookings List Item -->
+                    <div class="d-flex flex-column gap-3 mt-3">
+                        {% if user_bookings %}
+                            {% for b in user_bookings|slice:":2" %}
+                                <div class="booking-strip-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 ps-4">
+                                    <div class="booking-accent-bar"></div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="{{ b.facility.display_image_url }}" alt="{{ b.facility.name }}" class="rounded-3 object-fit-cover shadow-xs" style="width: 85px; height: 55px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80';">
+                                        <div>
+                                            <h6 class="fw-bold mb-1" style="color: #181C32; font-size: 0.95rem;">{{ b.facility.name }}</h6>
+                                            <div class="d-flex flex-wrap align-items-center gap-3 text-muted small" style="font-size: 0.8rem;">
+                                                <span><i data-lucide="calendar" style="width: 13px; height: 13px; display: inline-block;"></i> {{ b.booking_date|date:"D, d M Y" }}</span>
+                                                <span><i data-lucide="clock" style="width: 13px; height: 13px; display: inline-block;"></i> {{ b.start_time|time:"H:i" }} &ndash; {{ b.end_time|time:"H:i" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3 align-self-end align-self-md-center">
+                                        {% if b.status == 'confirmed' or b.status == 'checked_in' %}
+                                            <span class="badge-pill-confirmed">
+                                                <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Confirmed
+                                            </span>
+                                        {% elif b.status == 'pending' %}
+                                            <span class="badge bg-warning text-dark rounded-pill px-3 py-1">Pending Approval</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary rounded-pill px-3 py-1">{{ b.get_status_display }}</span>
+                                        {% endif %}
+                                        <a href="{% if user.is_authenticated %}{% url 'student:booking_detail' b.id %}{% else %}{% url 'public:facility_detail' b.facility.slug %}{% endif %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.82rem;">
+                                            View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <!-- Mockup Showcase Booking Card -->
+                            <div class="booking-strip-card d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 ps-4">
+                                <div class="booking-accent-bar"></div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <img src="{% static 'facilities/seminar-hall-101.jpg' %}" alt="Seminar Hall" class="rounded-3 object-fit-cover shadow-xs" style="width: 85px; height: 55px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80';">
+                                    <div>
+                                        <h6 class="fw-bold mb-1" style="color: #181C32; font-size: 0.95rem;">Seminar Hall &ndash; Block A</h6>
+                                        <div class="d-flex flex-wrap align-items-center gap-3 text-muted small" style="font-size: 0.8rem;">
+                                            <span><i data-lucide="calendar" style="width: 13px; height: 13px; display: inline-block;"></i> Thu, 20 Nov 2026</span>
+                                            <span><i data-lucide="clock" style="width: 13px; height: 13px; display: inline-block;"></i> 10:00 AM &ndash; 12:00 PM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-3 align-self-end align-self-md-center">
+                                    <span class="badge-pill-confirmed">
+                                        <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i> Confirmed
+                                    </span>
+                                    <a href="{% url 'public:directory' %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.82rem;">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Mini Calendar (Matches User Mockup) -->
+                <div class="col-lg-4">
+                    <div class="calendar-card">
+                        <!-- Calendar Header -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0" id="calendarMonthLabel" style="color: #181C32; font-size: 1rem; font-weight: 800;">
+                                November 2026
+                            </h6>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm p-1 rounded-2 border" id="calPrev" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #F8FAFC;" aria-label="Previous month">
+                                    <i data-lucide="chevron-left" style="width: 15px; height: 15px; color: #475569;"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm p-1 rounded-2 border" id="calNext" style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #F8FAFC;" aria-label="Next month">
+                                    <i data-lucide="chevron-right" style="width: 15px; height: 15px; color: #475569;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Days of Week Header -->
+                        <div class="row g-0 text-center mb-2 text-muted fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.3px;">
+                            <div class="col">Sun</div>
+                            <div class="col">Mon</div>
+                            <div class="col">Tue</div>
+                            <div class="col">Wed</div>
+                            <div class="col">Thu</div>
+                            <div class="col">Fri</div>
+                            <div class="col">Sat</div>
+                        </div>
+
+                        <!-- Date Cells (Weekly Row matching Mockup) -->
+                        <div class="row g-0 text-center align-items-center" id="calWeekDays">
+                            <div class="col"><div class="cal-day-cell">16</div></div>
+                            <div class="col"><div class="cal-day-cell">17</div></div>
+                            <div class="col">
+                                <div class="cal-day-cell" title="Seminar Hall booked">
+                                    18
+                                    <span class="cal-dot"></span>
+                                </div>
+                            </div>
+                            <div class="col"><div class="cal-day-cell">19</div></div>
+                            <div class="col">
+                                <div class="cal-day-cell active" title="Active Reservation">
+                                    20
+                                    <span class="cal-dot"></span>
+                                </div>
+                            </div>
+                            <div class="col"><div class="cal-day-cell">21</div></div>
+                            <div class="col"><div class="cal-day-cell">22</div></div>
                         </div>
                     </div>
                 </div>
@@ -67,13 +588,13 @@
     </div>
 </section>
 
-<!-- Facility Categories Section -->
-<section class="py-5 bg-white border-bottom">
+<!-- 4. ALL CAMPUS CATEGORIES DISCOVERY -->
+<section class="py-5 bg-white border-top">
     <div class="container py-3">
         <div class="text-center mb-5">
-            <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Explore by Category</h6>
-            <h2 class="fw-bold">All Campus Resources at Your Fingertips</h2>
-            <p class="text-muted">Select a category to view operating hours, capacities, and slot openings.</p>
+            <span class="badge px-3 py-1 rounded-pill mb-2" style="background: #EEF2FF; color: #3B52D4; font-size: 0.78rem; font-weight: 600;">Campus Infrastructure</span>
+            <h2 class="fw-extrabold mb-1" style="color: #181C32; font-weight: 800; font-size: 1.75rem;">Explore All Categories</h2>
+            <p class="text-muted" style="font-size: 0.95rem;">Select any category to check operating schedules, floor plans, and available booking slots.</p>
         </div>
 
         <div class="row g-3">
@@ -81,11 +602,11 @@
                 <div class="col-6 col-md-4 col-lg-3">
                     <a href="{% url 'public:directory' %}?category={{ cat.slug }}" class="text-decoration-none">
                         <div class="card card-custom card-hover h-100 p-3 text-center">
-                            <div class="mx-auto mb-2 p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 52px; height: 52px; background-color: #EFF6FF; color: var(--brand-blue);">
-                                <i data-lucide="{{ cat.icon|default:'building' }}" style="width: 24px; height: 24px;"></i>
+                            <div class="mx-auto mb-2 p-3 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; background-color: #EFF6FF; color: #3B52D4;">
+                                <i data-lucide="{{ cat.icon|default:'building' }}" style="width: 22px; height: 22px;"></i>
                             </div>
-                            <h6 class="fw-bold text-dark mb-1">{{ cat.name }}</h6>
-                            <small class="text-muted">{{ cat.fac_count|default:cat.facilities.count }} active location{{ cat.fac_count|pluralize }}</small>
+                            <h6 class="fw-bold mb-1" style="color: #181C32; font-size: 0.95rem;">{{ cat.name }}</h6>
+                            <small class="text-muted" style="font-size: 0.75rem;">{{ cat.fac_count|default:cat.facilities.count }} location{{ cat.fac_count|pluralize }}</small>
                         </div>
                     </a>
                 </div>
@@ -94,182 +615,35 @@
     </div>
 </section>
 
-<!-- Featured Facilities -->
-<section class="py-5 bg-light">
-    <div class="container py-3">
-        <div class="d-flex justify-content-between align-items-end mb-4">
-            <div>
-                <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Ready for Booking</h6>
-                <h2 class="fw-bold mb-0">Featured Facilities</h2>
-            </div>
-            <a href="{% url 'public:directory' %}" class="btn btn-outline-primary btn-sm fw-semibold">
-                Browse All ({{ total_facilities }}) &rarr;
-            </a>
-        </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Tab switching for Upcoming vs Past
+        const tabUpcoming = document.getElementById('tabUpcoming');
+        const tabPast = document.getElementById('tabPast');
+        if (tabUpcoming && tabPast) {
+            tabUpcoming.addEventListener('click', function() {
+                tabUpcoming.classList.add('tab-pill-active');
+                tabUpcoming.classList.remove('tab-pill-inactive');
+                tabPast.classList.remove('tab-pill-active');
+                tabPast.classList.add('tab-pill-inactive');
+            });
+            tabPast.addEventListener('click', function() {
+                tabPast.classList.add('tab-pill-active');
+                tabPast.classList.remove('tab-pill-inactive');
+                tabUpcoming.classList.remove('tab-pill-active');
+                tabUpcoming.classList.add('tab-pill-inactive');
+            });
+        }
 
-        <div class="row g-4">
-            {% for f in featured_facilities %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card card-custom card-hover h-100 overflow-hidden">
-                        <div class="position-relative" style="height: 180px; background-color: #e2e8f0;">
-                            <img src="{{ f.display_image_url }}" alt="{{ f.name }}" class="w-100 h-100 object-fit-cover" loading="lazy">
-                            <span class="position-absolute top-0 start-0 m-3 badge bg-unibook-navy text-white px-2 py-1">
-                                {{ f.category.name }}
-                            </span>
-                            {% if f.is_free %}
-                                <span class="position-absolute top-0 end-0 m-3 badge bg-success text-white">Free</span>
-                            {% else %}
-                                <span class="position-absolute top-0 end-0 m-3 badge bg-primary text-white">₹{{ f.booking_price }}/slot</span>
-                            {% endif %}
-                        </div>
+        // Interactive Calendar Date Picking
+        const dayCells = document.querySelectorAll('.cal-day-cell');
+        dayCells.forEach(function(cell) {
+            cell.addEventListener('click', function() {
+                dayCells.forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    });
+</script>
 
-                        <div class="card-body p-4 d-flex flex-column">
-                            <h5 class="fw-bold mb-1">{{ f.name }}</h5>
-                            <p class="text-muted small mb-2">
-                                <i data-lucide="map-pin" style="width: 14px; height: 14px; display: inline-block;"></i> {{ f.building }}, {{ f.floor }}
-                            </p>
-                            <p class="text-secondary small flex-grow-1" style="line-height: 1.4;">
-                                {{ f.description|truncatewords:16 }}
-                            </p>
-
-                            <div class="d-flex justify-content-between align-items-center pt-2 border-top small text-muted mb-3">
-                                <div><i data-lucide="users" style="width: 14px; height: 14px; display: inline-block;"></i> Cap: {{ f.capacity }}</div>
-                                <div><i data-lucide="clock" style="width: 14px; height: 14px; display: inline-block;"></i> {{ f.slot_duration }} mins/slot</div>
-                            </div>
-
-                            <a href="{% url 'public:facility_detail' f.slug %}" class="btn btn-unibook-primary w-100">
-                                Check Availability & Book
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="col-12 text-center py-5">
-                    <p class="text-muted">No facilities found. Run <code>python manage.py seed_demo</code> to populate demo campus facilities.</p>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-
-<!-- How It Works Walkthrough -->
-<section class="py-5 bg-white border-top border-bottom">
-    <div class="container py-3">
-        <div class="text-center mb-5">
-            <h6 class="text-teal fw-bold text-uppercase" style="letter-spacing: 1px;">Effortless Experience</h6>
-            <h2 class="fw-bold">How UniBook Works</h2>
-            <p class="text-muted">Book any university resource in 4 simple steps.</p>
-        </div>
-
-        <div class="row g-4 text-center">
-            <div class="col-md-3">
-                <div class="p-4 rounded-4 bg-light h-100 border">
-                    <div class="fs-1 fw-bold text-primary mb-2">01</div>
-                    <h5 class="fw-bold mb-2">Discover Facility</h5>
-                    <p class="text-muted small mb-0">Search gyms, mess meals, labs, or sports courts across all campus buildings.</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-4 rounded-4 bg-light h-100 border">
-                    <div class="fs-1 fw-bold text-teal mb-2" style="color: var(--brand-teal);">02</div>
-                    <h5 class="fw-bold mb-2">Pick Time Slot</h5>
-                    <p class="text-muted small mb-0">View live, conflict-free availability slots generated directly from the backend engine.</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-4 rounded-4 bg-light h-100 border">
-                    <div class="fs-1 fw-bold text-primary mb-2">03</div>
-                    <h5 class="fw-bold mb-2">Instant Confirmation</h5>
-                    <p class="text-muted small mb-0">Lock your reservation atomically. Auto-approved or routed to facility manager.</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-4 rounded-4 bg-light h-100 border">
-                    <div class="fs-1 fw-bold text-success mb-2">04</div>
-                    <h5 class="fw-bold mb-2">QR Pass Entry</h5>
-                    <p class="text-muted small mb-0">Scan your cryptographic QR pass at the entrance for seamless, touchless check-in.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Campus Announcements -->
-{% if announcements %}
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="mb-4">
-            <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Campus Notices</h6>
-            <h2 class="fw-bold mb-0">Announcements & Notices</h2>
-        </div>
-        <div class="row g-3">
-            {% for a in announcements %}
-                <div class="col-md-6">
-                    <div class="card card-custom p-4 h-100">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-secondary text-uppercase">{{ a.get_category_display }}</span>
-                            <small class="text-muted">{{ a.created_at|date:"M d, Y" }}</small>
-                        </div>
-                        <h5 class="fw-bold mb-2">{{ a.title }}</h5>
-                        <p class="text-secondary small mb-0">{{ a.content }}</p>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
-{% endif %}
-
-<!-- FAQ Section -->
-<section class="py-5 bg-white">
-    <div class="container py-3">
-        <div class="text-center mb-5">
-            <h6 class="text-primary fw-bold text-uppercase" style="letter-spacing: 1px;">Got Questions?</h6>
-            <h2 class="fw-bold">Frequently Asked Questions</h2>
-        </div>
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="accordion" id="faqAccordion">
-                    <div class="accordion-item mb-2 border rounded">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                Who is eligible to book facilities on UniBook?
-                            </button>
-                        </h2>
-                        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body text-secondary small">
-                                All active students, faculty members, researchers, and campus staff with a university ID can log in and reserve facilities. Some academic labs require faculty approval.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item mb-2 border rounded">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                                How does double-booking prevention work?
-                            </button>
-                        </h2>
-                        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body text-secondary small">
-                                The platform uses database-level row locks (<code>select_for_update()</code>) inside atomic transactions to verify real-time capacity and prevent conflicting reservations even under concurrent requests.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="accordion-item mb-2 border rounded">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                                How do I check in with my QR pass?
-                            </button>
-                        </h2>
-                        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                            <div class="accordion-body text-secondary small">
-                                When your reservation is confirmed, a cryptographic QR pass is generated under "My Bookings". Simply show your phone screen to the facility staff scanner upon arrival.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 {% endblock %}
-

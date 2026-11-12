@@ -30,7 +30,57 @@ def home_view(request):
     categories = FacilityCategory.objects.annotate(fac_count=Count('facilities')).all()
     featured_facilities = Facility.objects.filter(
         facility_status=Facility.STATUS_ACTIVE
-    ).select_related('category')[:6]
+    ).select_related('category')[:8]
+
+    # Specific 4 showcase facility categories matching top university demands
+    showcase_facilities = [
+        {
+            'title': 'Seminar Hall',
+            'sub': 'Events • Presentations • Workshops',
+            'icon': 'presentation',
+            'status_label': 'Available',
+            'status_color': 'success',
+            'image': 'facilities/seminar-hall-101.jpg',
+            'facility': Facility.objects.filter(category__slug='seminar-hall').first()
+        },
+        {
+            'title': 'Computer Lab',
+            'sub': 'Coding • Research • Training',
+            'icon': 'laptop',
+            'status_label': 'Available',
+            'status_color': 'success',
+            'image': 'facilities/advanced-ai-cloud-lab.jpg',
+            'facility': Facility.objects.filter(category__slug='computer-laboratory').first()
+        },
+        {
+            'title': 'Sports Ground',
+            'sub': 'Football • Cricket • Athletics',
+            'icon': 'activity',
+            'status_label': 'Available',
+            'status_color': 'success',
+            'image': 'facilities/main-campus-football-stadium.jpg',
+            'facility': Facility.objects.filter(category__slug='sports').first()
+        },
+        {
+            'title': 'Auditorium',
+            'sub': 'Conferences • Cultural Events',
+            'icon': 'armchair',
+            'status_label': 'Limited',
+            'status_color': 'warning',
+            'image': 'facilities/kalam-memorial-auditorium.jpg',
+            'facility': Facility.objects.filter(category__slug='auditorium').first()
+        },
+    ]
+
+    # User active bookings or sample demo upcoming booking for visual showcase
+    user_bookings = []
+    if request.user.is_authenticated:
+        user_bookings = Booking.objects.filter(
+            user=request.user
+        ).select_related('facility').order_by('-booking_date', '-start_time')[:3]
+
+    if not user_bookings:
+        user_bookings = Booking.objects.select_related('facility').order_by('-booking_date', '-start_time')[:2]
 
     total_facilities = Facility.objects.count()
     total_bookings = Booking.objects.count()
@@ -39,6 +89,8 @@ def home_view(request):
     context = {
         'categories': categories,
         'featured_facilities': featured_facilities,
+        'showcase_facilities': showcase_facilities,
+        'user_bookings': user_bookings,
         'total_facilities': total_facilities,
         'total_bookings': total_bookings,
         'announcements': announcements,

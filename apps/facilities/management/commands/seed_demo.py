@@ -1074,7 +1074,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("✓ Real-world reviews, complaints, announcements, and maintenance windows seeded."))
 
         self.stdout.write(self.style.SUCCESS("\n======================================================="))
-        self.stdout.write(self.style.SUCCESS("UniBook (CampusEase) Rich Demo Data Populated!"))
+        self.stdout.write(self.style.SUCCESS("UniBook Rich Demo Data Populated!"))
         self.stdout.write(self.style.SUCCESS("======================================================="))
         self.stdout.write("Credentials:")
         self.stdout.write("  - Super Admin:      admin          / AdminPass123!")

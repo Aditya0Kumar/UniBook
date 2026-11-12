@@ -1,4 +1,4 @@
-# UniBook (CampusEase) 🎓
+# UniBook 🎓
 ### University Facility Booking & Operational Resource Management System
 **Built with Python 3.12+ &bull; Django 5/6 &bull; Django REST Framework &bull; MySQL 8+ &bull; WhiteNoise &bull; FullCalendar &bull; Chart.js**
 

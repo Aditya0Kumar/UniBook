@@ -1,5 +1,5 @@
 """
-URL configuration for UniBook (CampusEase) project.
+URL configuration for UniBook project.
 """
 
 from django.contrib import admin

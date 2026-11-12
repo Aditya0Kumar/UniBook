@@ -1,5 +1,5 @@
 """
-Django settings for UniBook (CampusEase) project.
+Django settings for UniBook project.
 University Facility Booking & Management System
 """
 
@@ -193,7 +193,7 @@ SIMPLE_JWT = {
 # Spectacular OpenAPI / Swagger UI
 SPECTACULAR_SETTINGS = {
     'TITLE': 'UniBook API',
-    'DESCRIPTION': 'CampusEase - University Facility Booking & Management System API documentation.',
+    'DESCRIPTION': 'UniBook - University Facility Booking & Management System API documentation.',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
