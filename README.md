@@ -91,7 +91,7 @@ UniBook/
 
 ### 1. Clone & Set Up Virtual Environment
 ```bash
-git clone https://github.com/your-repo/UniBook.git
+git clone https://github.com/Aditya0Kumar/UniBook.git
 cd UniBook
 
 # Create and activate virtual environment
@@ -150,8 +150,10 @@ The seed command creates active test accounts for all user roles:
 | :--- | :--- | :--- | :--- | :--- |
 | **Super Admin** | `admin` | `AdminPass123!` | `admin@unibook.campus.edu` | Full platform control, Analytics, Export CSV, Audit logs |
 | **Facility Manager** | `manager_demo` | `ManagerPass123!` | `manager@unibook.campus.edu` | QR Entrance Scanner, Approvals, Facility operations |
+| **Sports Manager** | `manager_sports` | `ManagerPass123!` | `sports.lead@unibook.campus.edu` | Sports & Athletics operations, court approvals |
 | **Faculty Member** | `faculty_demo` | `FacultyPass123!` | `faculty@unibook.campus.edu` | Academic labs, recurring semester reservations |
 | **Student** | `student_demo` | `StudentPass123!` | `student@unibook.campus.edu` | Book facilities, view QR passes, submit reviews |
+| **Student 2** | `student_rahul` | `StudentPass123!` | `rahul.verma@unibook.campus.edu` | Mechanical engg student, active reservations |
 
 *(The Sign In page also includes one-click demo autofill buttons for fast testing).*
 
