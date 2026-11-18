@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
+from django.db.models import Q
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -158,15 +159,21 @@ class BookingViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'payment_status', 'facility', 'booking_date']
     search_fields = ['booking_reference', 'purpose', 'user__username', 'facility__name']
     ordering_fields = ['booking_date', 'start_time', 'created_at']
+    # Bookings are created through create_booking() and changed only through the
+    # cancel / approve / reject / check-in actions, so every change goes through the
+    # booking rules. Generic PUT/PATCH/DELETE would bypass them.
+    http_method_names = ['get', 'post', 'head', 'options']
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return Booking.objects.none()
         user = self.request.user
         if user.is_superadmin:
             return Booking.objects.all().select_related('facility', 'user', 'facility__category')
         elif user.is_facility_manager:
             # Managed facilities + own bookings
             return Booking.objects.filter(
-                models.Q(facility__assigned_manager=user) | models.Q(user=user)
+                Q(facility__assigned_manager=user) | Q(user=user)
             ).select_related('facility', 'user', 'facility__category')
         else:
             return Booking.objects.filter(user=user).select_related('facility', 'user', 'facility__category')

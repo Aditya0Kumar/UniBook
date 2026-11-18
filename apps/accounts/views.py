@@ -6,12 +6,29 @@ from rest_framework import generics, permissions, viewsets, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import Department, UserProfile
 from .serializers import UserSerializer, RegisterSerializer, DepartmentSerializer
 from .permissions import IsSuperAdmin
 
 User = get_user_model()
+
+SELF_REGISTER_ROLES = (User.ROLE_STUDENT, User.ROLE_FACULTY)
+
+
+def _safe_next_url(request):
+    """Return the ?next= target only if it points back to this site."""
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return None
 
 
 # -------------------------------------------------------------
@@ -38,7 +55,7 @@ def login_view(request):
         if user:
             login(request, user)
             messages.success(request, f"Welcome back, {user.get_full_name() or user.username}!")
-            next_url = request.GET.get('next')
+            next_url = _safe_next_url(request)
             if next_url:
                 return redirect(next_url)
             
@@ -71,12 +88,25 @@ def register_view(request):
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
         university_id = request.POST.get('university_id', '').strip()
-        role = request.POST.get('role', 'student')
+        role = request.POST.get('role', User.ROLE_STUDENT)
         department_id = request.POST.get('department')
         phone_number = request.POST.get('phone_number', '').strip()
 
+        # Only student and faculty accounts can be self-registered. Facility managers
+        # and admins must be created by an administrator.
+        if role not in SELF_REGISTER_ROLES:
+            messages.error(request, "Please choose a valid campus role.")
+            return render(request, 'accounts/register.html', {'departments': departments})
+
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
+            return render(request, 'accounts/register.html', {'departments': departments})
+
+        try:
+            validate_password(password, user=User(username=username, email=email, first_name=first_name, last_name=last_name))
+        except DjangoValidationError as e:
+            for msg in e.messages:
+                messages.error(request, msg)
             return render(request, 'accounts/register.html', {'departments': departments})
 
         if User.objects.filter(username=username).exists():

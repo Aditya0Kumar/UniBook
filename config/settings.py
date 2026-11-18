@@ -10,7 +10,14 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load environment variables if available
+# Load environment variables from a local .env file if available.
+# Real environment variables take precedence over values in .env.
+try:
+    from dotenv import load_dotenv
+    load_dotenv(BASE_DIR / '.env')
+except ImportError:  # python-dotenv not installed; fall back to process env only
+    pass
+
 SECRET_KEY = os.environ.get(
     'SECRET_KEY',
     'django-insecure-unibook-facility-reservation-platform-secret-key-2026-xyz!'
@@ -199,5 +206,5 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Email Backend (Console backend for development)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 DEFAULT_FROM_EMAIL = 'UniBook Campus Services <no-reply@unibook.campus.edu>'

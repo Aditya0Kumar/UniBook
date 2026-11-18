@@ -113,7 +113,7 @@
             // Fill manual input and submit via fetch or form
             manualInput.value = decodedText;
 
-            fetch('/api/bookings/check-in/', {
+            fetch('{% url "bookings:booking-api-check-in" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

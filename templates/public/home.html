@@ -499,7 +499,7 @@
                                         {% else %}
                                             <span class="badge bg-secondary rounded-pill px-3 py-1">{{ b.get_status_display }}</span>
                                         {% endif %}
-                                        <a href="{% if user.is_authenticated %}{% url 'student:booking_detail' b.id %}{% else %}{% url 'public:facility_detail' b.facility.slug %}{% endif %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.82rem;">
+                                        <a href="{% if user.is_authenticated %}{% url 'bookings:booking_detail' b.id %}{% else %}{% url 'public:facility_detail' b.facility.slug %}{% endif %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-semibold" style="font-size: 0.82rem;">
                                             View Details
                                         </a>
                                     </div>
