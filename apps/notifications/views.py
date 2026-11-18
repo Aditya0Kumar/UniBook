@@ -6,9 +6,10 @@ from .models import Notification, Announcement
 
 @login_required
 def notification_list_view(request):
-    notifications = Notification.objects.filter(recipient=request.user)
-    # Mark all read on viewing list
-    notifications.filter(is_read=False).update(is_read=True)
+    # Evaluate the list first so the page can still highlight what was unread,
+    # then mark everything as read for the next visit.
+    notifications = list(Notification.objects.filter(recipient=request.user))
+    Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
     return render(request, 'student/notifications.html', {'notifications': notifications})
 
 

@@ -22,6 +22,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source='department.name', read_only=True)
     profile = UserProfileSerializer(read_only=True)
+    is_student = serializers.BooleanField(read_only=True)
+    is_faculty = serializers.BooleanField(read_only=True)
+    is_facility_manager = serializers.BooleanField(read_only=True)
+    is_superadmin = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User

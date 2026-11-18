@@ -375,3 +375,69 @@ class PaymentRuleTests(TestCase):
         result = validate_and_checkin(self.booking.booking_reference, self.manager)
         self.assertFalse(result['success'])
         self.assertIn('Payment Due', result['message'])
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: cleanup
+# ---------------------------------------------------------------------------
+
+class CleanupTests(APITestCase):
+    def setUp(self):
+        make_fixture(self)
+
+    def test_notifications_page_still_highlights_unread(self):
+        from apps.notifications.models import Notification
+        Notification.objects.create(recipient=self.student, title='Hello', message='m')
+        self.client.force_login(self.student)
+        first = self.client.get(reverse('notifications:list'))
+        self.assertContains(first, 'bg-light px-3 rounded-2')
+        self.assertFalse(Notification.objects.filter(recipient=self.student, is_read=False).exists())
+        second = self.client.get(reverse('notifications:list'))
+        self.assertNotContains(second, 'bg-light px-3 rounded-2')
+
+    def test_diet_form_keeps_allergies(self):
+        from apps.mess.models import DietaryPreference
+        DietaryPreference.objects.create(user=self.student, preference='veg', allergies='Peanut')
+        self.client.force_login(self.student)
+        self.client.post(reverse('mess:menu'), {'update_diet': '1', 'preference': 'vegan'})
+        pref = DietaryPreference.objects.get(user=self.student)
+        self.assertEqual((pref.preference, pref.allergies), ('vegan', 'Peanut'))
+        self.client.post(reverse('mess:menu'), {'update_diet': '1', 'preference': 'bogus', 'allergies': 'Gluten'})
+        pref.refresh_from_db()
+        self.assertEqual((pref.preference, pref.allergies), ('veg', 'Gluten'))
+
+    def test_profile_rejects_non_image_upload(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.client.force_login(self.student)
+        fake = SimpleUploadedFile('x.png', b'not an image', content_type='image/png')
+        self.client.post(reverse('accounts:profile'), {'first_name': 'S', 'profile_picture': fake})
+        self.student.refresh_from_db()
+        self.assertFalse(self.student.profile_picture)
+
+    def test_profile_page_has_picture_field(self):
+        self.client.force_login(self.student)
+        self.assertContains(self.client.get(reverse('accounts:profile')), 'name="profile_picture"')
+
+    def test_user_api_is_admin_only(self):
+        self.client.force_authenticate(self.student)
+        self.assertEqual(self.client.get('/accounts/api/users/').status_code, status.HTTP_403_FORBIDDEN)
+        admin = User.objects.create_superuser(username='u_admin', email='u_admin@test.edu', password='Password123!')
+        self.client.force_authenticate(admin)
+        self.assertEqual(self.client.get('/accounts/api/users/').status_code, 200)
+        self.assertEqual(self.client.delete(f'/accounts/api/users/{self.student.id}/').status_code,
+                         status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_departments_api_is_public(self):
+        self.assertEqual(self.client.get('/accounts/api/departments/').status_code, 200)
+
+    def test_staff_dashboard_shows_staff_announcements(self):
+        from apps.notifications.models import Announcement
+        Announcement.objects.create(title='Staff briefing', content='c', target_role=Announcement.TARGET_STAFF, is_active=True)
+        Announcement.objects.create(title='Students only', content='c', target_role=Announcement.TARGET_STUDENT, is_active=True)
+        self.client.force_login(self.manager)
+        response = self.client.get(reverse('staff:dashboard'))
+        self.assertContains(response, 'Staff briefing')
+        self.assertNotContains(response, 'Students only')
+
+    def test_api_schema_generates(self):
+        self.assertEqual(self.client.get('/api/schema/').status_code, 200)

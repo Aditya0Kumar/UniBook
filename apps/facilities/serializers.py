@@ -39,7 +39,7 @@ class FacilityListSerializer(serializers.ModelSerializer):
             'average_rating'
         ]
 
-    def get_average_rating(self, obj):
+    def get_average_rating(self, obj) -> float:
         avg = obj.reviews.filter(is_approved=True).aggregate(Avg('rating'))['rating__avg']
         return round(avg, 1) if avg else 5.0
 
@@ -67,7 +67,7 @@ class FacilityDetailSerializer(serializers.ModelSerializer):
             'average_rating', 'reviews_count', 'created_at', 'updated_at'
         ]
 
-    def get_average_rating(self, obj):
+    def get_average_rating(self, obj) -> float:
         avg = obj.reviews.filter(is_approved=True).aggregate(Avg('rating'))['rating__avg']
         return round(avg, 1) if avg else 5.0
 
@@ -76,7 +76,7 @@ class FacilityDetailSerializer(serializers.ModelSerializer):
         data['category'] = FacilityCategorySerializer(instance.category, context=self.context).data
         return data
 
-    def get_reviews_count(self, obj):
+    def get_reviews_count(self, obj) -> int:
         return obj.reviews.filter(is_approved=True).count()
 
 

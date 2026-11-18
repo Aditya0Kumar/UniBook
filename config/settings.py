@@ -155,7 +155,21 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # WhiteNoise compression and caching
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# (STATICFILES_STORAGE was removed in Django 5.1 and is ignored, so use STORAGES.)
+# The hashed/compressed WhiteNoise storage needs `collectstatic`, so it is used only
+# when DEBUG is off; local development keeps the plain storage.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': (
+            'django.contrib.staticfiles.storage.StaticFilesStorage'
+            if DEBUG else
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
+    },
+}
 
 # Media files
 MEDIA_URL = '/media/'

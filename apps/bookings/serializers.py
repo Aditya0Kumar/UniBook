@@ -38,7 +38,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at'
         ]
 
-    def get_qr_code_url(self, obj):
+    def get_qr_code_url(self, obj) -> str | None:
         if obj.qr_code:
             request = self.context.get('request')
             if request:

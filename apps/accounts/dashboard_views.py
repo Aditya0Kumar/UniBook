@@ -142,7 +142,14 @@ def staff_dashboard(request):
             messages.error(request, res['message'])
         return redirect('staff:dashboard')
 
+    announcements = Announcement.objects.filter(
+        is_active=True
+    ).filter(
+        Q(target_role=Announcement.TARGET_ALL) | Q(target_role=Announcement.TARGET_STAFF)
+    )[:4]
+
     context = {
+        'announcements': announcements,
         'managed_facilities': managed_facilities,
         'pending_bookings': pending_bookings,
         'today_bookings': today_bookings,

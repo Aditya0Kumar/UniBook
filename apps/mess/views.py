@@ -21,7 +21,11 @@ def mess_menu_view(request):
         user_diet = DietaryPreference.objects.filter(user=request.user).first()
         if request.method == 'POST' and 'update_diet' in request.POST:
             pref = request.POST.get('preference', DietaryPreference.PREF_VEG)
-            allergies = request.POST.get('allergies', '')
+            valid_prefs = {c[0] for c in DietaryPreference._meta.get_field('preference').choices}
+            if pref not in valid_prefs:
+                pref = DietaryPreference.PREF_VEG
+            # Keep existing allergies if the field wasn't submitted
+            allergies = request.POST.get('allergies', user_diet.allergies if user_diet else '').strip()[:250]
             DietaryPreference.objects.update_or_create(
                 user=request.user,
                 defaults={'preference': pref, 'allergies': allergies}

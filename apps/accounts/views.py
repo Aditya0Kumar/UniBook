@@ -1,3 +1,4 @@
+from django import forms
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -18,6 +19,7 @@ from .permissions import IsSuperAdmin
 User = get_user_model()
 
 SELF_REGISTER_ROLES = (User.ROLE_STUDENT, User.ROLE_FACULTY)
+MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024
 
 
 def _safe_next_url(request):
@@ -180,7 +182,16 @@ def profile_view(request):
             user.department = Department.objects.filter(id=dept_id).first()
 
         if 'profile_picture' in request.FILES:
-            user.profile_picture = request.FILES['profile_picture']
+            upload = request.FILES['profile_picture']
+            if upload.size > MAX_PROFILE_PICTURE_BYTES:
+                messages.error(request, "Profile picture must be 5 MB or smaller.")
+                return redirect('accounts:profile')
+            try:
+                # Verifies the upload is a real image (uses Pillow)
+                user.profile_picture = forms.ImageField().clean(upload)
+            except DjangoValidationError:
+                messages.error(request, "Please upload a valid image file (JPG, PNG or WebP).")
+                return redirect('accounts:profile')
 
         user.save()
 
@@ -221,6 +232,17 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('department', 'profile')
     serializer_class = UserSerializer
     permission_classes = [IsSuperAdmin]
+    # Accounts are created via registration or Django admin (which handles passwords);
+    # this API is for listing and editing profile fields only.
+    http_method_names = ['get', 'patch', 'head', 'options']
     filterset_fields = ['role', 'department', 'is_active']
     search_fields = ['username', 'email', 'first_name', 'last_name', 'university_id']
     ordering_fields = ['date_joined', 'username', 'role']
+
+
+class DepartmentViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public list of departments (ids are needed when registering through the API)."""
+    queryset = Department.objects.all()
+    serializer_class = DepartmentSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None

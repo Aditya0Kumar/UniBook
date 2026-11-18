@@ -8,6 +8,8 @@ from django.utils import timezone
 from django.db.models import Count, Sum, Avg
 from django.db.models.functions import TruncDate, ExtractHour
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 
 from apps.accounts.models import CustomUser, Department
@@ -78,6 +80,7 @@ class AdminAnalyticsAPIView(APIView):
     """
     permission_classes = [IsSuperAdmin]
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
         today = timezone.localdate()
         seven_days_ago = today - datetime.timedelta(days=6)

@@ -53,14 +53,16 @@
                             <input type="hidden" name="update_diet" value="1">
                             <div class="input-group input-group-sm mb-1">
                                 <select name="preference" class="form-select">
-                                    <option value="veg">Vegetarian</option>
-                                    <option value="non_veg">Non-Vegetarian</option>
-                                    <option value="vegan">Vegan</option>
-                                    <option value="jain">Jain Counter</option>
-                                    <option value="halal">Halal</option>
+                                    <option value="veg" {% if user_diet.preference == 'veg' %}selected{% endif %}>Vegetarian</option>
+                                    <option value="non_veg" {% if user_diet.preference == 'non_veg' %}selected{% endif %}>Non-Vegetarian</option>
+                                    <option value="vegan" {% if user_diet.preference == 'vegan' %}selected{% endif %}>Vegan</option>
+                                    <option value="jain" {% if user_diet.preference == 'jain' %}selected{% endif %}>Jain Counter</option>
+                                    <option value="halal" {% if user_diet.preference == 'halal' %}selected{% endif %}>Halal</option>
                                 </select>
                                 <button type="submit" class="btn btn-primary">Save</button>
                             </div>
+                            <input type="text" name="allergies" class="form-control form-control-sm" maxlength="250"
+                                   placeholder="Allergies (e.g. Peanut, Gluten)" value="{{ user_diet.allergies|default:'' }}">
                         </form>
                     </div>
                 {% else %}

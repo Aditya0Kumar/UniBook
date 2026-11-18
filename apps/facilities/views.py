@@ -7,6 +7,8 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 from apps.accounts.permissions import CanManageFacility, IsSuperAdmin
 from apps.bookings.services import calculate_facility_slots
@@ -18,7 +20,6 @@ from .serializers import (
     FacilityListSerializer,
     FacilityDetailSerializer,
     FacilityCategorySerializer,
-    HolidaySerializer
 )
 
 
@@ -225,6 +226,7 @@ class FacilityAvailabilityAPIView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, pk):
         facility = get_object_or_404(Facility, pk=pk)
         date_str = request.query_params.get('date')
@@ -257,6 +259,7 @@ class FacilityCalendarEventsAPIView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request, pk):
         facility = get_object_or_404(Facility, pk=pk)
         start_str = request.query_params.get('start')
