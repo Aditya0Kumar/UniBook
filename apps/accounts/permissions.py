@@ -25,3 +25,13 @@ class IsOwnerOrStaff(permissions.BasePermission):
         user_field = getattr(obj, 'user', None)
         return user_field == request.user
 
+
+
+class CanManageFacility(permissions.BasePermission):
+    """Facility managers may edit only facilities assigned to them; super admins may edit any."""
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and (request.user.is_facility_manager or request.user.is_superadmin))
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.can_manage_facility(obj)

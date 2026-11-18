@@ -83,6 +83,16 @@ class CustomUser(AbstractUser):
     def is_superadmin(self):
         return self.role == self.ROLE_ADMIN or self.is_superuser
 
+    def can_manage_facility(self, facility):
+        """Super admins manage every facility; facility managers only the ones assigned to them."""
+        if self.is_superadmin:
+            return True
+        return (
+            self.is_facility_manager
+            and facility is not None
+            and facility.assigned_manager_id == self.pk
+        )
+
 
 class UserProfile(models.Model):
     ACADEMIC_LEVELS = [

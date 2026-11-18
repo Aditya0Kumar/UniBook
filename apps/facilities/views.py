@@ -8,7 +8,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.permissions import IsFacilityManagerOrAdmin
+from apps.accounts.permissions import CanManageFacility, IsSuperAdmin
 from apps.bookings.services import calculate_facility_slots
 from apps.bookings.models import Booking
 from apps.reviews.models import Review
@@ -79,8 +79,6 @@ def home_view(request):
             user=request.user
         ).select_related('facility').order_by('-booking_date', '-start_time')[:3]
 
-    if not user_bookings:
-        user_bookings = Booking.objects.select_related('facility').order_by('-booking_date', '-start_time')[:2]
 
     total_facilities = Facility.objects.count()
     total_bookings = Booking.objects.count()
@@ -211,8 +209,12 @@ class FacilityViewSet(viewsets.ModelViewSet):
         return FacilityDetailSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsFacilityManagerOrAdmin()]
+        # Adding or deleting facilities is reserved for super admins; managers may only
+        # update the facilities assigned to them.
+        if self.action in ['create', 'destroy']:
+            return [IsSuperAdmin()]
+        if self.action in ['update', 'partial_update']:
+            return [CanManageFacility()]
         return [permissions.AllowAny()]
 
 

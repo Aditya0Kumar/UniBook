@@ -240,8 +240,11 @@ class FacilityApiCreateTests(APITestCase):
     def setUp(self):
         make_fixture(self)
 
-    def test_manager_can_create_facility_with_category_id(self):
-        self.client.force_authenticate(self.manager)
+    def test_admin_can_create_facility_with_category_id(self):
+        admin = User.objects.create_superuser(
+            username='api_admin', email='api_admin@test.edu', password='Password123!', role=User.ROLE_ADMIN,
+        )
+        self.client.force_authenticate(admin)
         response = self.client.post('/api/facilities/', {
             'name': 'New Hall', 'description': 'd', 'building': 'B', 'category': self.category.id,
         }, format='json')
@@ -251,3 +254,124 @@ class FacilityApiCreateTests(APITestCase):
     def test_detail_still_returns_nested_category(self):
         response = self.client.get(f'/api/facilities/{self.facility.id}/')
         self.assertEqual(response.data['category']['slug'], 'courts')
+
+
+# ---------------------------------------------------------------------------
+# Phase 3: permissions and business rules
+# ---------------------------------------------------------------------------
+
+class PermissionAndRuleTests(APITestCase):
+    def setUp(self):
+        make_fixture(self)
+        # A second manager who does NOT manage self.facility
+        self.other_manager = User.objects.create_user(
+            username='reg_manager2', email='reg_manager2@test.edu',
+            password='Password123!', role=User.ROLE_FACILITY_MANAGER, is_staff=True,
+        )
+        self.booking.status = Booking.STATUS_PENDING
+        self.booking.save()
+
+    def test_other_manager_cannot_approve_via_staff_page(self):
+        self.client.force_login(self.other_manager)
+        self.client.post(reverse('staff:approvals'), {'booking_id': self.booking.id, 'action': 'approve'})
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, Booking.STATUS_PENDING)
+
+    def test_assigned_manager_can_approve_via_staff_page(self):
+        self.client.force_login(self.manager)
+        self.client.post(reverse('staff:approvals'), {'booking_id': self.booking.id, 'action': 'approve'})
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, Booking.STATUS_CONFIRMED)
+
+    def test_other_manager_cannot_cancel(self):
+        from django.core.exceptions import ValidationError
+        from apps.bookings.services import cancel_booking
+        with self.assertRaises(ValidationError):
+            cancel_booking(self.booking, self.other_manager)
+
+    def test_manager_cannot_approve_own_booking_elsewhere_via_api(self):
+        own = Booking.objects.create(
+            user=self.other_manager, facility=self.facility,
+            booking_date=self.booking.booking_date, start_time=datetime.time(12, 0),
+            end_time=datetime.time(13, 0), purpose='x', status=Booking.STATUS_PENDING,
+        )
+        self.client.force_authenticate(self.other_manager)
+        response = self.client.post(f'/bookings/api/bookings/{own.id}/approve/')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_managers_blocked_from_admin_panel(self):
+        self.client.force_login(self.manager)
+        response = self.client.post(reverse('admin_panel:facilities'), {'facility_id': self.facility.id, 'toggle_status': '1'})
+        self.assertEqual(response.status_code, 302)
+        self.facility.refresh_from_db()
+        self.assertEqual(self.facility.facility_status, Facility.STATUS_ACTIVE)
+
+    def test_manager_can_only_edit_own_facility_via_api(self):
+        self.client.force_authenticate(self.other_manager)
+        denied = self.client.patch(f'/api/facilities/{self.facility.id}/', {'capacity': 99}, format='json')
+        self.assertEqual(denied.status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.manager)
+        allowed = self.client.patch(f'/api/facilities/{self.facility.id}/', {'capacity': 6}, format='json')
+        self.assertEqual(allowed.status_code, 200)
+
+    def test_exclusive_facility_enforces_capacity(self):
+        from django.core.exceptions import ValidationError
+        from apps.bookings.services import create_booking
+        with self.assertRaises(ValidationError):
+            create_booking(
+                user=self.student, facility_id=self.other_facility.id if self.other_facility.is_exclusive else self.facility.id,
+                booking_date=self.booking.booking_date, start_time=datetime.time(14, 0),
+                end_time=datetime.time(15, 0), participant_count=500,
+            )
+
+    def test_home_does_not_show_other_users_bookings(self):
+        self.client.force_login(self.other_manager)
+        response = self.client.get(reverse('public:home'))
+        self.assertNotContains(response, self.booking.booking_reference)
+
+    def test_invalid_complaint_status_rejected(self):
+        from apps.reviews.models import Complaint
+        admin = User.objects.create_superuser(username='c_admin', email='c_admin@test.edu', password='Password123!')
+        complaint = Complaint.objects.create(facility=self.facility, user=self.student, title='t', description='d')
+        self.client.force_login(admin)
+        self.client.post(reverse('admin_panel:complaints'), {'complaint_id': complaint.id, 'status': 'bogus'})
+        complaint.refresh_from_db()
+        self.assertEqual(complaint.status, Complaint.STATUS_PENDING)
+
+
+class PaymentRuleTests(TestCase):
+    def setUp(self):
+        make_fixture(self)
+        self.facility.booking_price = 50
+        self.facility.save()
+        self.booking.payment_status = Booking.PAYMENT_PENDING
+        self.booking.save()
+
+    def test_cannot_pay_cancelled_booking(self):
+        self.booking.status = Booking.STATUS_CANCELLED
+        self.booking.save()
+        self.client.force_login(self.student)
+        self.client.post(reverse('payments:checkout', args=[self.booking.id]), {'payment_method': 'campus_card'})
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.payment_status, Booking.PAYMENT_PENDING)
+
+    def test_cancel_marks_payment_refunded(self):
+        from apps.bookings.services import cancel_booking
+        from apps.payments.models import Payment
+        self.client.force_login(self.student)
+        self.client.post(reverse('payments:checkout', args=[self.booking.id]), {'payment_method': 'campus_card'})
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.payment_status, Booking.PAYMENT_PAID)
+        cancel_booking(self.booking, self.student)
+        self.assertEqual(Payment.objects.get(booking=self.booking).status, Payment.STATUS_REFUNDED)
+        # A refunded booking cannot be paid again
+        self.client.post(reverse('payments:checkout', args=[self.booking.id]), {'payment_method': 'campus_card'})
+        self.assertEqual(Payment.objects.filter(booking=self.booking).count(), 1)
+
+    def test_unpaid_booking_cannot_check_in(self):
+        from apps.bookings.services import validate_and_checkin
+        self.booking.booking_date = datetime.date.today()
+        self.booking.save()
+        result = validate_and_checkin(self.booking.booking_reference, self.manager)
+        self.assertFalse(result['success'])
+        self.assertIn('Payment Due', result['message'])

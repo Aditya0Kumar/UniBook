@@ -8,6 +8,7 @@ from apps.facilities.models import Facility, FacilityOperatingHour, Holiday
 from apps.maintenance.models import FacilityMaintenance
 from apps.notifications.models import Notification
 from apps.analytics.models import AuditLog
+from apps.payments.models import Payment
 from .models import Booking, BookingCancellation, BookingApproval
 from .qr import generate_qr_code_image
 
@@ -227,6 +228,11 @@ def create_booking(
         end_time__gt=start_time
     )
 
+    if participant_count > facility.capacity:
+        raise ValidationError(
+            f"This facility holds at most {facility.capacity} people; you requested {participant_count}."
+        )
+
     if facility.is_exclusive:
         if overlapping_query.exists():
             conflict = overlapping_query.first()
@@ -318,7 +324,7 @@ def cancel_booking(booking: Booking, user, reason: str = '', ip_address: str = N
     Cancels a booking after verifying cancellation rules and permissions.
     """
     # Verify permission: only the booking owner or staff/admin can cancel
-    if booking.user != user and not (user.is_staff or user.is_facility_manager or user.is_superadmin):
+    if booking.user != user and not user.can_manage_facility(booking.facility):
         raise ValidationError("You do not have permission to cancel this booking.")
 
     if not booking.can_be_cancelled:
@@ -327,6 +333,8 @@ def cancel_booking(booking: Booking, user, reason: str = '', ip_address: str = N
     booking.status = Booking.STATUS_CANCELLED
     if booking.payment_status == Booking.PAYMENT_PAID:
         booking.payment_status = Booking.PAYMENT_REFUNDED
+        # Keep the payment ledger in step with the booking so revenue totals stay correct
+        booking.payments.filter(status=Payment.STATUS_COMPLETED).update(status=Payment.STATUS_REFUNDED)
     booking.save()
 
     BookingCancellation.objects.create(
@@ -360,6 +368,8 @@ def approve_booking(booking: Booking, manager, comments: str = '', ip_address: s
     """
     Approves a pending booking.
     """
+    if not manager.can_manage_facility(booking.facility):
+        raise ValidationError(f"You are not the manager for {booking.facility.name}.")
     if booking.status != Booking.STATUS_PENDING:
         raise ValidationError("Only pending bookings can be approved.")
 
@@ -399,6 +409,8 @@ def reject_booking(booking: Booking, manager, reason: str = '', ip_address: str 
     """
     Rejects a pending booking.
     """
+    if not manager.can_manage_facility(booking.facility):
+        raise ValidationError(f"You are not the manager for {booking.facility.name}.")
     if booking.status != Booking.STATUS_PENDING:
         raise ValidationError("Only pending bookings can be rejected.")
 
@@ -458,14 +470,13 @@ def validate_and_checkin(token_or_reference: str, staff_user, ip_address: str = 
             'booking': None
         }
 
-    # If facility manager is assigned, verify facility access
-    if staff_user.role == 'facility_manager' and not staff_user.is_superuser:
-        if booking.facility.assigned_manager_id and booking.facility.assigned_manager_id != staff_user.id:
-            return {
-                'success': False,
-                'message': f"Access Denied: You are not the manager for {booking.facility.name}.",
-                'booking': booking
-            }
+    # Only the facility's assigned manager (or a super admin) may validate its passes
+    if not staff_user.can_manage_facility(booking.facility):
+        return {
+            'success': False,
+            'message': f"Access Denied: You are not the manager for {booking.facility.name}.",
+            'booking': booking
+        }
 
     # Check status
     if booking.status == Booking.STATUS_CHECKED_IN:
@@ -493,6 +504,20 @@ def validate_and_checkin(token_or_reference: str, staff_user, ip_address: str = 
         return {
             'success': False,
             'message': f"Pass Pending: Booking {booking.booking_reference} has NOT yet been approved.",
+            'booking': booking
+        }
+
+    if booking.payment_status in (Booking.PAYMENT_PENDING, Booking.PAYMENT_FAILED):
+        return {
+            'success': False,
+            'message': f"Payment Due: Booking {booking.booking_reference} has not been paid yet.",
+            'booking': booking
+        }
+
+    if booking.status not in (Booking.STATUS_CONFIRMED,):
+        return {
+            'success': False,
+            'message': f"Pass Rejected: Booking {booking.booking_reference} is {booking.get_status_display()}.",
             'booking': booking
         }
 

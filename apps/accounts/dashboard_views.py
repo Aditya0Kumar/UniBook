@@ -204,7 +204,10 @@ def staff_approvals_view(request):
         if not (booking_id and str(booking_id).isdigit()):
             messages.error(request, "Invalid booking selected.")
             return redirect('staff:approvals')
-        booking = get_object_or_404(Booking, id=booking_id)
+        booking = get_object_or_404(Booking.objects.select_related('facility'), id=booking_id)
+        if not user.can_manage_facility(booking.facility):
+            messages.error(request, f"You are not the manager for {booking.facility.name}.")
+            return redirect('staff:approvals')
 
         try:
             if action == 'approve':

@@ -30,7 +30,7 @@ def _get_posted_object(model, raw_id):
 
 @login_required
 def admin_dashboard_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         messages.error(request, "Access restricted to Super Administrators.")
         return redirect('public:home')
 
@@ -143,7 +143,7 @@ class AdminAnalyticsAPIView(APIView):
 
 @login_required
 def admin_facilities_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     facilities = Facility.objects.select_related('category', 'assigned_manager').all()
@@ -168,7 +168,7 @@ def admin_facilities_view(request):
 
 @login_required
 def admin_users_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     role_filter = request.GET.get('role', '')
@@ -184,7 +184,7 @@ def admin_users_view(request):
 
 @login_required
 def admin_bookings_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     bookings = Booking.objects.select_related('facility', 'user', 'facility__category').all()[:50]
@@ -193,7 +193,7 @@ def admin_bookings_view(request):
 
 @login_required
 def admin_export_bookings_csv(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     response = HttpResponse(content_type='text/csv')
@@ -227,7 +227,7 @@ def admin_export_bookings_csv(request):
 
 @login_required
 def admin_export_facilities_csv(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     response = HttpResponse(content_type='text/csv')
@@ -251,7 +251,7 @@ def admin_export_facilities_csv(request):
 
 @login_required
 def admin_maintenance_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     facilities = Facility.objects.all()
@@ -304,7 +304,7 @@ def admin_maintenance_view(request):
 
 @login_required
 def admin_complaints_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     complaints = Complaint.objects.select_related('facility', 'user', 'resolved_by').all()
@@ -315,6 +315,10 @@ def admin_complaints_view(request):
         remarks = request.POST.get('admin_remarks', '')
 
         complaint = _get_posted_object(Complaint, c_id)
+        valid_statuses = {choice[0] for choice in Complaint._meta.get_field('status').choices}
+        if new_status not in valid_statuses:
+            messages.error(request, "Please choose a valid complaint status.")
+            return redirect('admin_panel:complaints')
         complaint.status = new_status
         complaint.admin_remarks = remarks
         if new_status == Complaint.STATUS_RESOLVED:
@@ -329,7 +333,7 @@ def admin_complaints_view(request):
 
 @login_required
 def admin_announcements_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     announcements = Announcement.objects.select_related('author').all()
@@ -375,7 +379,7 @@ def admin_announcements_view(request):
 
 @login_required
 def admin_payments_view(request):
-    if not (request.user.is_superadmin or request.user.is_staff):
+    if not request.user.is_superadmin:
         return redirect('public:home')
 
     payments = Payment.objects.select_related('booking', 'user', 'booking__facility').all()

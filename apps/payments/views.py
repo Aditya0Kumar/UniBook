@@ -9,8 +9,12 @@ from .models import Payment
 def payment_checkout_view(request, booking_id):
     booking = get_object_or_404(Booking, id=booking_id, user=request.user)
 
-    if booking.payment_status == Booking.PAYMENT_PAID or booking.facility.booking_price <= 0:
+    if booking.payment_status not in (Booking.PAYMENT_PENDING, Booking.PAYMENT_FAILED) or booking.facility.booking_price <= 0:
         messages.info(request, "This booking has no pending payment.")
+        return redirect('bookings:booking_detail', pk=booking.id)
+
+    if booking.status not in (Booking.STATUS_CONFIRMED, Booking.STATUS_PENDING):
+        messages.error(request, f"This booking is {booking.get_status_display().lower()} and can no longer be paid for.")
         return redirect('bookings:booking_detail', pk=booking.id)
 
     if request.method == 'POST':
