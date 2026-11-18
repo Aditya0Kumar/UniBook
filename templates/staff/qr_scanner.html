@@ -108,6 +108,14 @@
         const alertBox = document.getElementById('scanResultAlert');
         const manualInput = document.getElementById('manualInput');
 
+        // Messages can contain user-supplied text (e.g. names), so insert them as text, not HTML.
+        function showResult(label, text) {
+            alertBox.replaceChildren();
+            const strong = document.createElement('strong');
+            strong.textContent = label + ' ';
+            alertBox.append(strong, document.createTextNode(text || ''));
+        }
+
         function onScanSuccess(decodedText, decodedResult) {
             console.log(`Scan result: ${decodedText}`);
             // Fill manual input and submit via fetch or form
@@ -126,17 +134,17 @@
                 alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
                 if (data.success) {
                     alertBox.classList.add('alert-success');
-                    alertBox.innerHTML = `<strong>PASS VERIFIED:</strong> ${data.message}`;
+                    showResult('PASS VERIFIED:', data.message);
                     setTimeout(() => location.reload(), 2000);
                 } else {
                     alertBox.classList.add('alert-danger');
-                    alertBox.innerHTML = `<strong>VALIDATION FAILED:</strong> ${data.message || data.error}`;
+                    showResult('VALIDATION FAILED:', data.message || data.error || data.detail);
                 }
             })
             .catch(err => {
                 alertBox.classList.remove('d-none', 'alert-success');
                 alertBox.classList.add('alert-danger');
-                alertBox.innerHTML = `<strong>Scanner Error:</strong> ${err.message}`;
+                showResult('Scanner Error:', err.message);
             });
         }
 
@@ -152,7 +160,7 @@
             }).catch(err => {
                 alertBox.classList.remove('d-none', 'alert-success');
                 alertBox.classList.add('alert-warning');
-                alertBox.innerHTML = `Camera unavailable or permission denied. Please use the manual validation input.`;
+                alertBox.textContent = 'Camera unavailable or permission denied. Please use the manual validation input.';
             });
         });
 

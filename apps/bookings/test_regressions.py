@@ -441,3 +441,27 @@ class CleanupTests(APITestCase):
 
     def test_api_schema_generates(self):
         self.assertEqual(self.client.get('/api/schema/').status_code, 200)
+
+
+# ---------------------------------------------------------------------------
+# Final check
+# ---------------------------------------------------------------------------
+
+class FinalCheckTests(APITestCase):
+    def setUp(self):
+        make_fixture(self)
+
+    def test_api_booking_for_missing_facility_is_400(self):
+        self.client.force_authenticate(self.student)
+        response = self.client.post('/bookings/api/bookings/', {
+            'facility_id': 999999,
+            'booking_date': (datetime.date.today() + datetime.timedelta(days=2)).isoformat(),
+            'start_time': '10:00', 'end_time': '11:00',
+        })
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_qr_scanner_does_not_render_messages_as_html(self):
+        self.client.force_login(self.manager)
+        response = self.client.get(reverse('staff:qr_scanner'))
+        self.assertNotContains(response, 'innerHTML')
+        self.assertContains(response, 'textContent')

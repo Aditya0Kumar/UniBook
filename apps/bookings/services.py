@@ -165,7 +165,9 @@ def create_booking(
     select_for_update() to lock overlapping records and prevent double-booking.
     """
     # 1. Lock the facility record
-    facility = Facility.objects.select_for_update().get(id=facility_id)
+    facility = Facility.objects.select_for_update().filter(id=facility_id).first()
+    if facility is None:
+        raise ValidationError("The selected facility does not exist.")
 
     # 2. Basic status checks
     if facility.facility_status != Facility.STATUS_ACTIVE:
