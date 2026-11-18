@@ -148,3 +148,106 @@ class QrScannerTests(TestCase):
         check_in_url = reverse('bookings:booking-api-check-in')
         self.assertEqual(check_in_url, '/bookings/api/bookings/check-in/')
         self.assertContains(response, f"fetch('{check_in_url}'")
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: bad input must not cause server errors
+# ---------------------------------------------------------------------------
+
+class BadInputTests(TestCase):
+    def setUp(self):
+        make_fixture(self)
+        self.admin = User.objects.create_superuser(
+            username='reg_admin', email='reg_admin@test.edu', password='Password123!', role=User.ROLE_ADMIN,
+        )
+
+    def test_register_blank_fields(self):
+        response = self.client.post(reverse('accounts:register'), {
+            'username': '', 'email': '', 'password': '', 'confirm_password': '', 'role': 'student',
+        })
+        self.assertEqual(response.status_code, 200)
+
+    def test_register_duplicate_university_id(self):
+        self.student.university_id = 'U-100'
+        self.student.save()
+        response = self.client.post(reverse('accounts:register'), {
+            'username': 'dup', 'email': 'dup@test.edu', 'university_id': 'U-100',
+            'password': 'Unusual-Pass-9481', 'confirm_password': 'Unusual-Pass-9481', 'role': 'student',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(username='dup').exists())
+
+    def test_register_bad_department(self):
+        response = self.client.post(reverse('accounts:register'), {
+            'username': 'deptx', 'email': 'deptx@test.edu', 'department': 'abc',
+            'password': 'Unusual-Pass-9481', 'confirm_password': 'Unusual-Pass-9481', 'role': 'student',
+        })
+        self.assertEqual(response.status_code, 302)
+
+    def test_booking_bad_participant_counts(self):
+        self.client.force_login(self.student)
+        url = reverse('bookings:booking_create', args=[self.facility.slug])
+        before = Booking.objects.count()
+        for value in ('abc', '-5', '0'):
+            response = self.client.post(url, {
+                'booking_date': (datetime.date.today() + datetime.timedelta(days=3)).isoformat(),
+                'start_time': '10:00', 'end_time': '11:00', 'participant_count': value,
+            })
+            self.assertEqual(response.status_code, 302, value)
+        self.assertEqual(Booking.objects.count(), before)
+
+    def test_review_bad_ratings(self):
+        from apps.reviews.models import Review
+        self.client.force_login(self.student)
+        url = reverse('reviews:submit_review', args=[self.facility.slug])
+        for value in ('x', '99', '0'):
+            self.assertEqual(self.client.post(url, {'rating': value}).status_code, 302, value)
+        self.assertFalse(Review.objects.filter(user=self.student).exists())
+        self.client.post(url, {'rating': '4'})
+        self.assertEqual(Review.objects.get(user=self.student).rating, 4)
+
+    def test_mess_menu_bad_facility_param(self):
+        self.assertEqual(self.client.get('/mess/menu/?facility=abc').status_code, 200)
+
+    def test_staff_approvals_bad_booking_id(self):
+        self.client.force_login(self.manager)
+        response = self.client.post(reverse('staff:approvals'), {'booking_id': 'abc', 'action': 'approve'})
+        self.assertEqual(response.status_code, 302)
+
+    def test_admin_panel_bad_ids_give_404(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('admin_panel:facilities'), {'facility_id': 'abc', 'toggle_status': '1'})
+        self.assertEqual(response.status_code, 404)
+
+    def test_announcement_blank_fields(self):
+        from apps.notifications.models import Announcement
+        self.client.force_login(self.admin)
+        response = self.client.post(reverse('admin_panel:announcements'), {'action': 'create'})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Announcement.objects.exists())
+
+    def test_maintenance_end_before_start(self):
+        from apps.maintenance.models import FacilityMaintenance
+        self.client.force_login(self.admin)
+        self.client.post(reverse('admin_panel:maintenance'), {
+            'action': 'create', 'facility_id': self.facility.id, 'title': 'Fix',
+            'start_time': '2030-01-02T10:00', 'end_time': '2030-01-01T10:00',
+        })
+        self.assertFalse(FacilityMaintenance.objects.exists())
+
+
+class FacilityApiCreateTests(APITestCase):
+    def setUp(self):
+        make_fixture(self)
+
+    def test_manager_can_create_facility_with_category_id(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.post('/api/facilities/', {
+            'name': 'New Hall', 'description': 'd', 'building': 'B', 'category': self.category.id,
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data['category']['id'], self.category.id)
+
+    def test_detail_still_returns_nested_category(self):
+        response = self.client.get(f'/api/facilities/{self.facility.id}/')
+        self.assertEqual(response.data['category']['slug'], 'courts')

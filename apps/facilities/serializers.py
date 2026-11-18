@@ -45,7 +45,9 @@ class FacilityListSerializer(serializers.ModelSerializer):
 
 
 class FacilityDetailSerializer(serializers.ModelSerializer):
-    category = FacilityCategorySerializer(read_only=True)
+    # Writable by primary key (so the API can create/update facilities); rendered as a
+    # nested object in responses, see to_representation().
+    category = serializers.PrimaryKeyRelatedField(queryset=FacilityCategory.objects.all())
     gallery_images = FacilityImageSerializer(many=True, read_only=True)
     operating_hours = FacilityOperatingHourSerializer(many=True, read_only=True)
     manager_name = serializers.CharField(source='assigned_manager.get_full_name', read_only=True)
@@ -68,6 +70,11 @@ class FacilityDetailSerializer(serializers.ModelSerializer):
     def get_average_rating(self, obj):
         avg = obj.reviews.filter(is_approved=True).aggregate(Avg('rating'))['rating__avg']
         return round(avg, 1) if avg else 5.0
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['category'] = FacilityCategorySerializer(instance.category, context=self.context).data
+        return data
 
     def get_reviews_count(self, obj):
         return obj.reviews.filter(is_approved=True).count()

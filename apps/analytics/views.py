@@ -3,7 +3,7 @@ import datetime
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
 from django.utils import timezone
 from django.db.models import Count, Sum, Avg
 from django.db.models.functions import TruncDate, ExtractHour
@@ -19,6 +19,13 @@ from apps.notifications.models import Announcement
 from apps.payments.models import Payment
 from apps.accounts.permissions import IsSuperAdmin
 from .models import AuditLog
+
+
+def _get_posted_object(model, raw_id):
+    """get_object_or_404 for an id taken from POST data; non-numeric ids give a 404 instead of a 500."""
+    if not (raw_id and str(raw_id).isdigit()):
+        raise Http404("Invalid id")
+    return get_object_or_404(model, id=raw_id)
 
 
 @login_required
@@ -144,7 +151,7 @@ def admin_facilities_view(request):
 
     if request.method == 'POST' and 'toggle_status' in request.POST:
         fac_id = request.POST.get('facility_id')
-        facility = get_object_or_404(Facility, id=fac_id)
+        facility = _get_posted_object(Facility, fac_id)
         if facility.facility_status == Facility.STATUS_ACTIVE:
             facility.facility_status = Facility.STATUS_MAINTENANCE
         else:
@@ -260,13 +267,17 @@ def admin_maintenance_view(request):
             end_str = request.POST.get('end_time')
 
             try:
+                if not (title or '').strip():
+                    raise ValueError("a title is required")
                 start_dt = timezone.datetime.fromisoformat(start_str)
                 end_dt = timezone.datetime.fromisoformat(end_str)
-                facility = get_object_or_404(Facility, id=fac_id)
+                if end_dt <= start_dt:
+                    raise ValueError("end time must be after start time")
+                facility = _get_posted_object(Facility, fac_id)
                 FacilityMaintenance.objects.create(
                     facility=facility,
-                    title=title,
-                    description=description,
+                    title=title.strip(),
+                    description=description or '',
                     start_time=timezone.make_aware(start_dt) if timezone.is_naive(start_dt) else start_dt,
                     end_time=timezone.make_aware(end_dt) if timezone.is_naive(end_dt) else end_dt,
                     status=FacilityMaintenance.STATUS_SCHEDULED,
@@ -278,7 +289,7 @@ def admin_maintenance_view(request):
 
         elif action == 'complete':
             record_id = request.POST.get('record_id')
-            m_record = get_object_or_404(FacilityMaintenance, id=record_id)
+            m_record = _get_posted_object(FacilityMaintenance, record_id)
             m_record.status = FacilityMaintenance.STATUS_COMPLETED
             m_record.save()
             messages.success(request, f"Marked maintenance '{m_record.title}' as completed.")
@@ -303,7 +314,7 @@ def admin_complaints_view(request):
         new_status = request.POST.get('status')
         remarks = request.POST.get('admin_remarks', '')
 
-        complaint = get_object_or_404(Complaint, id=c_id)
+        complaint = _get_posted_object(Complaint, c_id)
         complaint.status = new_status
         complaint.admin_remarks = remarks
         if new_status == Complaint.STATUS_RESOLVED:
@@ -326,10 +337,20 @@ def admin_announcements_view(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'create':
-            title = request.POST.get('title')
-            content = request.POST.get('content')
+            title = (request.POST.get('title') or '').strip()
+            content = (request.POST.get('content') or '').strip()
             category = request.POST.get('category', Announcement.CATEGORY_GENERAL)
             target = request.POST.get('target_role', Announcement.TARGET_ALL)
+
+            if not title or not content:
+                messages.error(request, "An announcement needs both a title and content.")
+                return redirect('admin_panel:announcements')
+            valid_categories = {c[0] for c in Announcement._meta.get_field('category').choices}
+            valid_targets = {t[0] for t in Announcement._meta.get_field('target_role').choices}
+            if category not in valid_categories:
+                category = Announcement.CATEGORY_GENERAL
+            if target not in valid_targets:
+                target = Announcement.TARGET_ALL
 
             Announcement.objects.create(
                 title=title,
@@ -342,7 +363,7 @@ def admin_announcements_view(request):
             messages.success(request, "New announcement published to campus community.")
         elif action == 'toggle':
             ann_id = request.POST.get('announcement_id')
-            ann = get_object_or_404(Announcement, id=ann_id)
+            ann = _get_posted_object(Announcement, ann_id)
             ann.is_active = not ann.is_active
             ann.save()
             messages.success(request, f"Updated announcement '{ann.title}' status.")

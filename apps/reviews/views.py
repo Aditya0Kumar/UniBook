@@ -9,7 +9,13 @@ from .models import Review, Complaint
 def submit_review(request, slug):
     facility = get_object_or_404(Facility, slug=slug)
     if request.method == 'POST':
-        rating = int(request.POST.get('rating', 5))
+        try:
+            rating = int(request.POST.get('rating', 5))
+        except (TypeError, ValueError):
+            rating = 0
+        if not 1 <= rating <= 5:
+            messages.error(request, "Please choose a rating between 1 and 5 stars.")
+            return redirect('public:facility_detail', slug=facility.slug)
         comment = request.POST.get('comment', '').strip()
 
         Review.objects.update_or_create(

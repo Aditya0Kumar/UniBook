@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import validate_email
 from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import Department, UserProfile
@@ -98,6 +99,18 @@ def register_view(request):
             messages.error(request, "Please choose a valid campus role.")
             return render(request, 'accounts/register.html', {'departments': departments})
 
+        if not username or not email:
+            messages.error(request, "Username and email are required.")
+            return render(request, 'accounts/register.html', {'departments': departments})
+
+        try:
+            User.username_validator(username)
+            validate_email(email)
+        except DjangoValidationError as e:
+            for msg in e.messages:
+                messages.error(request, msg)
+            return render(request, 'accounts/register.html', {'departments': departments})
+
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
             return render(request, 'accounts/register.html', {'departments': departments})
@@ -117,7 +130,14 @@ def register_view(request):
             messages.error(request, "Email is already registered.")
             return render(request, 'accounts/register.html', {'departments': departments})
 
-        department = Department.objects.filter(id=department_id).first() if department_id else None
+        if university_id and User.objects.filter(university_id=university_id).exists():
+            messages.error(request, "This University ID / Roll Number is already registered.")
+            return render(request, 'accounts/register.html', {'departments': departments})
+
+        department = (
+            Department.objects.filter(id=department_id).first()
+            if department_id and department_id.isdigit() else None
+        )
 
         user = User.objects.create_user(
             username=username,
@@ -156,7 +176,7 @@ def profile_view(request):
         user.phone_number = request.POST.get('phone_number', user.phone_number)
         
         dept_id = request.POST.get('department')
-        if dept_id:
+        if dept_id and dept_id.isdigit():
             user.department = Department.objects.filter(id=dept_id).first()
 
         if 'profile_picture' in request.FILES:
@@ -168,7 +188,9 @@ def profile_view(request):
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.bio = request.POST.get('bio', profile.bio)
         profile.emergency_contact = request.POST.get('emergency_contact', profile.emergency_contact)
-        profile.academic_level = request.POST.get('academic_level', profile.academic_level)
+        academic_level = request.POST.get('academic_level', profile.academic_level)
+        if academic_level in dict(UserProfile.ACADEMIC_LEVELS) or academic_level == '':
+            profile.academic_level = academic_level
         profile.save()
 
         messages.success(request, "Your profile details have been updated successfully.")

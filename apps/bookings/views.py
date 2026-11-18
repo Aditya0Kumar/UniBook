@@ -41,7 +41,13 @@ def booking_create_view(request, slug):
         date_str = request.POST.get('booking_date')
         start_time_str = request.POST.get('start_time')
         end_time_str = request.POST.get('end_time')
-        participant_count = int(request.POST.get('participant_count', 1))
+        try:
+            participant_count = int(request.POST.get('participant_count') or 1)
+        except (TypeError, ValueError):
+            participant_count = 0
+        if participant_count < 1:
+            messages.error(request, "Number of participants must be a whole number of at least 1.")
+            return redirect('public:facility_detail', slug=facility.slug)
         purpose = request.POST.get('purpose', '').strip()
         is_recurring = request.POST.get('is_recurring') == 'on'
         recurring_rule = request.POST.get('recurring_rule', '')

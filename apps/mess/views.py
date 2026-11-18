@@ -8,7 +8,7 @@ from apps.facilities.models import Facility
 def mess_menu_view(request):
     mess_facilities = Facility.objects.filter(category__slug='mess-and-dining')
     selected_facility_id = request.GET.get('facility')
-    if selected_facility_id:
+    if selected_facility_id and selected_facility_id.isdigit():
         facility = mess_facilities.filter(id=selected_facility_id).first()
     else:
         facility = mess_facilities.first()

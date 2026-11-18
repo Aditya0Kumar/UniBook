@@ -201,6 +201,9 @@ def staff_approvals_view(request):
         booking_id = request.POST.get('booking_id')
         action = request.POST.get('action')
         comments = request.POST.get('comments', '')
+        if not (booking_id and str(booking_id).isdigit()):
+            messages.error(request, "Invalid booking selected.")
+            return redirect('staff:approvals')
         booking = get_object_or_404(Booking, id=booking_id)
 
         try:
