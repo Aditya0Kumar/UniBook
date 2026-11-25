@@ -380,6 +380,7 @@
                                 </li>
                                 {% if user.is_superadmin %}
                                     <li><a class="dropdown-item py-2 small" href="{% url 'admin_panel:dashboard' %}"><i data-lucide="shield-check" style="width: 15px; height: 15px; display: inline-block;" class="me-2 text-warning"></i> Admin Operations</a></li>
+                                    <li><a class="dropdown-item py-2 small" href="{% url 'staff:dashboard' %}"><i data-lucide="clipboard-check" style="width: 15px; height: 15px; display: inline-block;" class="me-2 text-primary"></i> Staff Portal & Approvals</a></li>
                                 {% elif user.is_facility_manager %}
                                     <li><a class="dropdown-item py-2 small" href="{% url 'staff:dashboard' %}"><i data-lucide="clipboard-check" style="width: 15px; height: 15px; display: inline-block;" class="me-2 text-primary"></i> Manager Portal & Scanner</a></li>
                                 {% elif user.is_faculty %}

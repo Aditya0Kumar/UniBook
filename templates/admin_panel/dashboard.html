@@ -14,6 +14,9 @@
             <p class="text-muted small mb-0">Real-time system health, booking velocity, facility usage, and audit reports.</p>
         </div>
         <div class="d-flex gap-2">
+            <a href="{% url 'staff:dashboard' %}" class="btn btn-primary btn-sm fw-semibold">
+                <i data-lucide="clipboard-check" style="width: 14px; height: 14px; display: inline-block;"></i> Staff Dashboard & Approvals
+            </a>
             <a href="{% url 'admin_panel:export_bookings_csv' %}" class="btn btn-outline-success btn-sm fw-semibold">
                 <i data-lucide="download" style="width: 14px; height: 14px; display: inline-block;"></i> Export Bookings CSV
             </a>
@@ -33,6 +36,14 @@
             <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary btn-sm">Facility Manager</a>
             <a href="{% url 'admin_panel:users' %}" class="btn btn-outline-secondary btn-sm">User Directory</a>
             <a href="{% url 'admin_panel:bookings' %}" class="btn btn-outline-secondary btn-sm">All Bookings</a>
+            <a href="{% url 'staff:dashboard' %}" class="btn btn-outline-primary btn-sm"><i data-lucide="layout-dashboard" style="width: 14px; height: 14px; display: inline-block;"></i> Staff Portal</a>
+            <a href="{% url 'staff:approvals' %}" class="btn btn-outline-warning btn-sm position-relative">
+                <i data-lucide="clock" style="width: 14px; height: 14px; display: inline-block;"></i> Pending Approvals
+                {% if pending_approvals > 0 %}
+                    <span class="badge bg-danger rounded-pill ms-1">{{ pending_approvals }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'staff:qr_scanner' %}" class="btn btn-outline-secondary btn-sm"><i data-lucide="qr-code" style="width: 14px; height: 14px; display: inline-block;"></i> QR Scanner</a>
         </div>
     </div>
 
@@ -56,7 +67,14 @@
             <div class="card card-custom p-3 border-start border-success border-4">
                 <span class="text-muted small">Total Bookings</span>
                 <h3 class="fw-bold my-1 text-success">{{ total_bookings }}</h3>
-                <small class="text-secondary">{{ active_bookings }} currently active</small>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <small class="text-secondary">{{ active_bookings }} active</small>
+                    {% if pending_approvals > 0 %}
+                        <a href="{% url 'staff:approvals' %}" class="badge bg-warning text-dark text-decoration-none">
+                            {{ pending_approvals }} pending &rarr;
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
         <div class="col-sm-6 col-lg-3">

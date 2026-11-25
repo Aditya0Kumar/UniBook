@@ -132,10 +132,33 @@ def booking_detail_view(request, pk):
         messages.error(request, "You are not authorized to view this booking.")
         return redirect('student:dashboard')
 
+    # Ensure QR code pass exists; generate on the fly if missing
+    if not booking.qr_code:
+        try:
+            from .qr import generate_qr_code_image
+            qr_file = generate_qr_code_image(str(booking.token), booking.booking_reference)
+            booking.qr_code.save(qr_file.name, qr_file, save=True)
+        except Exception:
+            pass
+
     context = {
         'booking': booking,
     }
     return render(request, 'student/booking_detail.html', context)
+
+
+@login_required
+def booking_qr_view(request, pk):
+    booking = get_object_or_404(Booking, pk=pk)
+    if booking.user != request.user and not (request.user.is_facility_manager or request.user.is_superadmin):
+        return HttpResponse("Unauthorized", status=403)
+
+    if not booking.qr_code:
+        from .qr import generate_qr_code_image
+        qr_file = generate_qr_code_image(str(booking.token), booking.booking_reference)
+        booking.qr_code.save(qr_file.name, qr_file, save=True)
+
+    return HttpResponse(booking.qr_code.read(), content_type='image/png')
 
 
 @login_required
