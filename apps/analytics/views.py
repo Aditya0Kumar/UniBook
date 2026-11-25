@@ -14,6 +14,7 @@ from rest_framework.response import Response
 
 from apps.accounts.models import CustomUser, Department
 from apps.facilities.models import Facility, FacilityCategory
+from apps.facilities.forms import FacilityForm
 from apps.bookings.models import Booking
 from apps.maintenance.models import FacilityMaintenance
 from apps.reviews.models import Complaint, Review
@@ -166,6 +167,55 @@ def admin_facilities_view(request):
     return render(request, 'admin_panel/facilities.html', {
         'facilities': facilities,
         'categories': categories,
+    })
+
+
+@login_required
+def admin_facility_create_view(request):
+    if not request.user.is_superadmin:
+        return redirect('public:home')
+
+    if request.method == 'POST':
+        form = FacilityForm(request.POST, request.FILES)
+        if form.is_valid():
+            facility = form.save()
+            messages.success(request, f"Facility '{facility.name}' created successfully.")
+            return redirect('admin_panel:facilities')
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = FacilityForm()
+
+    return render(request, 'admin_panel/facility_form.html', {
+        'form': form,
+        'action_title': 'Add New Facility',
+        'is_edit': False,
+    })
+
+
+@login_required
+def admin_facility_edit_view(request, pk):
+    if not request.user.is_superadmin:
+        return redirect('public:home')
+
+    facility = get_object_or_404(Facility, pk=pk)
+
+    if request.method == 'POST':
+        form = FacilityForm(request.POST, request.FILES, instance=facility)
+        if form.is_valid():
+            facility = form.save()
+            messages.success(request, f"Facility '{facility.name}' updated successfully.")
+            return redirect('admin_panel:facilities')
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = FacilityForm(instance=facility)
+
+    return render(request, 'admin_panel/facility_form.html', {
+        'form': form,
+        'facility': facility,
+        'action_title': f"Edit Facility: {facility.name}",
+        'is_edit': True,
     })
 
 

@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action_title }} | Super Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+    <!-- Breadcrumb / Back button -->
+    <div class="mb-3">
+        <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1">
+            <i data-lucide="arrow-left" style="width: 14px; height: 14px;"></i> Back to Facilities
+        </a>
+    </div>
+
+    <div class="card card-custom p-4 shadow-sm border-0">
+        <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
+            <div>
+                <h3 class="fw-bold mb-1">{{ action_title }}</h3>
+                <p class="text-muted small mb-0">Fill in the details below to {% if is_edit %}update{% else %}create{% endif %} a campus facility.</p>
+            </div>
+            <div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
+                    <i data-lucide="building" style="width: 14px; height: 14px; display: inline-block;"></i> Admin Facility Form
+                </span>
+            </div>
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger mb-4">
+                {% for error in form.non_field_errors %}
+                    <div><i data-lucide="alert-circle" style="width: 14px; height: 14px; display: inline-block;"></i> {{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Section 1: Basic Information -->
+            <div class="mb-4">
+                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                    <i data-lucide="info" class="text-primary" style="width: 18px; height: 18px;"></i> Basic Information
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold small">Facility Name <span class="text-danger">*</span></label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Category <span class="text-danger">*</span></label>
+                        {{ form.category }}
+                        {% if form.category.errors %}<div class="text-danger small mt-1">{{ form.category.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Description <span class="text-danger">*</span></label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold small">Facility Image</label>
+                        {{ form.image }}
+                        {% if form.image.errors %}<div class="text-danger small mt-1">{{ form.image.errors|join:", " }}</div>{% endif %}
+                        {% if is_edit and facility.image %}
+                            <div class="small text-muted mt-1">Current image: <a href="{{ facility.image.url }}" target="_blank">{{ facility.image.name }}</a></div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Facility Status</label>
+                        {{ form.facility_status }}
+                        {% if form.facility_status.errors %}<div class="text-danger small mt-1">{{ form.facility_status.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Location & Space -->
+            <div class="mb-4 pt-3 border-top">
+                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                    <i data-lucide="map-pin" class="text-primary" style="width: 18px; height: 18px;"></i> Location & Capacity
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Campus</label>
+                        {{ form.campus }}
+                        {% if form.campus.errors %}<div class="text-danger small mt-1">{{ form.campus.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Building <span class="text-danger">*</span></label>
+                        {{ form.building }}
+                        {% if form.building.errors %}<div class="text-danger small mt-1">{{ form.building.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Floor</label>
+                        {{ form.floor }}
+                        {% if form.floor.errors %}<div class="text-danger small mt-1">{{ form.floor.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Room Number</label>
+                        {{ form.room_number }}
+                        {% if form.room_number.errors %}<div class="text-danger small mt-1">{{ form.room_number.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold small">Location Details / Directions</label>
+                        {{ form.location_details }}
+                        {% if form.location_details.errors %}<div class="text-danger small mt-1">{{ form.location_details.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Capacity (Persons) <span class="text-danger">*</span></label>
+                        {{ form.capacity }}
+                        {% if form.capacity.errors %}<div class="text-danger small mt-1">{{ form.capacity.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-8 d-flex align-items-center mt-4">
+                        <div class="form-check">
+                            {{ form.is_exclusive }}
+                            <label class="form-check-label fw-semibold small" for="{{ form.is_exclusive.id_for_label }}">
+                                Exclusive Reservation
+                            </label>
+                            <div class="form-text small">If checked, one reservation blocks the entire venue. If unchecked, multiple users share slots up to capacity (e.g. Gym, Library pod).</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Operating Hours & Booking Rules -->
+            <div class="mb-4 pt-3 border-top">
+                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                    <i data-lucide="clock" class="text-primary" style="width: 18px; height: 18px;"></i> Timings & Booking Rules
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Opening Time <span class="text-danger">*</span></label>
+                        {{ form.opening_time }}
+                        {% if form.opening_time.errors %}<div class="text-danger small mt-1">{{ form.opening_time.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Closing Time <span class="text-danger">*</span></label>
+                        {{ form.closing_time }}
+                        {% if form.closing_time.errors %}<div class="text-danger small mt-1">{{ form.closing_time.errors|join:", " }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Operating Days</label>
+                        <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+                            {% for choice in form.available_days %}
+                                <div class="form-check">
+                                    {{ choice.tag }}
+                                    <label class="form-check-label small" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text small text-muted mt-1">{{ form.available_days.help_text }}</div>
+                        {% if form.available_days.errors %}<div class="text-danger small mt-1">{{ form.available_days.errors|join:", " }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Slot Duration (Mins)</label>
+                        {{ form.slot_duration }}
+                        {% if form.slot_duration.errors %}<div class="text-danger small mt-1">{{ form.slot_duration.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Booking Price (₹)</label>
+                        {{ form.booking_price }}
+                        <div class="form-text small">Enter 0.00 for free university facilities.</div>
+                        {% if form.booking_price.errors %}<div class="text-danger small mt-1">{{ form.booking_price.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Max Advance Days</label>
+                        {{ form.max_advance_booking_days }}
+                        {% if form.max_advance_booking_days.errors %}<div class="text-danger small mt-1">{{ form.max_advance_booking_days.errors|join:", " }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Min Duration (Mins)</label>
+                        {{ form.min_booking_duration }}
+                        {% if form.min_booking_duration.errors %}<div class="text-danger small mt-1">{{ form.min_booking_duration.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Max Duration (Mins)</label>
+                        {{ form.max_booking_duration }}
+                        {% if form.max_booking_duration.errors %}<div class="text-danger small mt-1">{{ form.max_booking_duration.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold small">Cancellation Deadline (Hours)</label>
+                        {{ form.cancellation_deadline }}
+                        {% if form.cancellation_deadline.errors %}<div class="text-danger small mt-1">{{ form.cancellation_deadline.errors|join:", " }}</div>{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4: Manager Assignment & Approvals -->
+            <div class="mb-4 pt-3 border-top">
+                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 mb-3">
+                    <i data-lucide="shield-check" class="text-primary" style="width: 18px; height: 18px;"></i> Management & Approvals
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Assigned Manager</label>
+                        {{ form.assigned_manager }}
+                        <div class="form-text small">Select the designated staff/manager who reviews and approves bookings.</div>
+                        {% if form.assigned_manager.errors %}<div class="text-danger small mt-1">{{ form.assigned_manager.errors|join:", " }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center mt-4">
+                        <div class="form-check">
+                            {{ form.approval_requirement }}
+                            <label class="form-check-label fw-semibold small" for="{{ form.approval_requirement.id_for_label }}">
+                                Require Manager / Admin Approval
+                            </label>
+                            <div class="form-text small">If enabled, bookings stay in "Pending Approval" state until reviewed.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end gap-2 pt-4 border-top">
+                <a href="{% url 'admin_panel:facilities' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+                <button type="submit" class="btn btn-unibook-primary px-4 d-inline-flex align-items-center gap-2">
+                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                    {% if is_edit %}Save Changes{% else %}Create Facility{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
