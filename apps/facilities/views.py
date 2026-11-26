@@ -287,33 +287,85 @@ class FacilityCalendarEventsAPIView(APIView):
             status__in=[Booking.STATUS_CONFIRMED, Booking.STATUS_PENDING, Booking.STATUS_CHECKED_IN]
         ).select_related('user')
 
+        user = request.user if request.user.is_authenticated else None
+        is_staff_view = bool(user and user.can_manage_facility(facility))
+
         events = []
         for b in bookings:
-            start_iso = f"{b.booking_date}T{b.start_time.strftime('%H:%M:%S')}"
-            end_iso = f"{b.booking_date}T{b.end_time.strftime('%H:%M:%S')}"
-            
-            color = '#2563EB' # Blue for confirmed
-            if b.status == Booking.STATUS_PENDING:
-                color = '#F59E0B' # Amber for pending
-            elif b.status == Booking.STATUS_CHECKED_IN:
-                color = '#10B981' # Green for checked in
+            is_own = user is not None and b.user_id == user.pk
+            # Shared facilities (labs, gym, mess) hold many people per slot, so other
+            # people's bookings are hidden there; only full slots are shown (below).
+            if not facility.is_exclusive and not is_own:
+                continue
 
-            title = f"Reserved: {b.purpose[:20]}" if b.purpose else "Reserved"
-            if request.user.is_authenticated and (request.user.is_facility_manager or request.user.is_superadmin):
-                title = f"{b.user.get_full_name() or b.user.username} - {title}"
+            color = '#2563EB'  # Blue for confirmed
+            if b.status == Booking.STATUS_PENDING:
+                color = '#F59E0B'  # Amber for pending
+            elif b.status == Booking.STATUS_CHECKED_IN:
+                color = '#10B981'  # Green for checked in
+
+            if is_own:
+                title = f"My booking: {b.purpose[:20]}" if b.purpose else "My booking"
+            elif is_staff_view:
+                title = f"{b.user.get_full_name() or b.user.username} - Booked"
+            else:
+                title = "Booked"
+                color = '#64748B'  # Grey: someone else holds this exclusive slot
 
             events.append({
                 'id': b.id,
                 'title': title,
-                'start': start_iso,
-                'end': end_iso,
+                'start': f"{b.booking_date}T{b.start_time.strftime('%H:%M:%S')}",
+                'end': f"{b.booking_date}T{b.end_time.strftime('%H:%M:%S')}",
                 'backgroundColor': color,
                 'borderColor': color,
                 'extendedProps': {
-                    'reference': b.booking_reference,
-                    'status': b.get_status_display(),
-                    'participants': b.participant_count
+                    'reference': b.booking_reference if (is_own or is_staff_view) else '',
+                    'status': b.get_status_display() if (is_own or is_staff_view) else 'Booked',
+                    'participants': b.participant_count if (is_own or is_staff_view) else None,
                 }
             })
 
+        if not facility.is_exclusive:
+            events.extend(_full_capacity_events(facility, bookings))
+
         return Response(events)
+
+
+def _full_capacity_events(facility, bookings):
+    """Grey 'Fully Booked' blocks for the times when a shared facility has no spots left."""
+    by_date = {}
+    for b in bookings:
+        by_date.setdefault(b.booking_date, []).append(b)
+
+    events = []
+    for day, day_bookings in by_date.items():
+        points = sorted({b.start_time for b in day_bookings} | {b.end_time for b in day_bookings})
+        full_start = full_end = None
+        for seg_start, seg_end in zip(points, points[1:]):
+            taken = sum(
+                b.participant_count for b in day_bookings
+                if b.start_time < seg_end and b.end_time > seg_start
+            )
+            if taken >= facility.capacity:
+                if full_start is None:
+                    full_start = seg_start
+                full_end = seg_end
+            elif full_start is not None:
+                events.append(_full_event(day, full_start, full_end))
+                full_start = full_end = None
+        if full_start is not None:
+            events.append(_full_event(day, full_start, full_end))
+    return events
+
+
+def _full_event(day, start, end):
+    return {
+        'id': f"full-{day}-{start.strftime('%H%M')}",
+        'title': 'Fully Booked',
+        'start': f"{day}T{start.strftime('%H:%M:%S')}",
+        'end': f"{day}T{end.strftime('%H:%M:%S')}",
+        'backgroundColor': '#64748B',
+        'borderColor': '#64748B',
+        'extendedProps': {'reference': '', 'status': 'Fully Booked', 'participants': None},
+    }
